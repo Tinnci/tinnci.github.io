@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Github, Twitter, Mail, ExternalLink, ArrowRight, ArrowLeft, Search, Moon, Sun, X } from 'lucide-react';
+import { Github, Mail, ExternalLink, ArrowRight, ArrowLeft, Search, Moon, Sun, X } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { getAllPosts, getPostBySlug, getFeaturedPost, getAllTags, getAllCategories, type Post } from './lib/posts';
 
@@ -181,8 +181,7 @@ const GridView = () => {
             <p style={{ marginTop: '1rem' }}>Focusing on the intersection of low-level systems and high-level design.</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Github size={24} /></MotionA>
-            <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Twitter size={24} /></MotionA>
+            <MotionA whileHover={{ y: -5 }} href="https://github.com/Tinnci/" target="_blank" rel="noopener noreferrer" style={{ color: 'black' }}><Github size={24} /></MotionA>
             <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Mail size={24} /></MotionA>
           </div>
         </MotionDiv>
