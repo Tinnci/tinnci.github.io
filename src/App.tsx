@@ -4,7 +4,7 @@ import { Github, Twitter, Mail, ExternalLink, ArrowRight, ArrowLeft } from 'luci
 
 // Fix for framer-motion v12+ type issues
 const MotionDiv = motion.div as React.FC<React.HTMLAttributes<HTMLDivElement> & {
-  initial?: object;
+  initial?: object | string;
   animate?: object | string;
   exit?: object;
   variants?: object;
