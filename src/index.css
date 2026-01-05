@@ -1,5 +1,5 @@
 :root {
-  --bg: #f0f0f0;
+  --bg: #f8f9fa;
   --fg: #1a1a1a;
   --accent-1: #ff6b6b;
   --accent-2: #4ecdc4;
@@ -8,17 +8,41 @@
   --border: #000000;
   --shadow: #000000;
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --accent-rgb-1: 255, 107, 107;
 }
 
 [data-theme="dark"] {
-  --bg: #1a1a1a;
-  --fg: #f0f0f0;
-  --accent-1: #ff6b6b;
-  --accent-2: #4ecdc4;
-  --accent-3: #ffe66d;
-  --card-bg: #2d2d2d;
-  --border: #f0f0f0;
+  --bg: #0a0a0a;
+  --fg: #e5e7eb;
+  --card-bg: #111111;
+  --border: #262626;
   --shadow: #000000;
+  /* Dynamic accents will override these */
+  --accent-1: #6366f1;
+  /* Indigo */
+  --accent-2: #10b981;
+  /* Emerald */
+  --accent-3: #f59e0b;
+  /* Amber */
+}
+
+[data-theme="dark"] .prose code {
+  background: #1f1f1f;
+  border: 1px solid #333;
+}
+
+[data-theme="dark"] .prose pre {
+  background: #000000;
+  border-color: var(--border);
+  box-shadow: 4px 4px 0 #000;
+}
+
+[data-theme="dark"] .prose blockquote {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .bento-item:hover {
+  border-color: var(--accent-1);
 }
 
 * {

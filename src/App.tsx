@@ -32,6 +32,13 @@ const MotionA = motion.a as React.FC<React.AnchorHTMLAttributes<HTMLAnchorElemen
   children?: React.ReactNode;
 }>;
 
+const PALETTES = [
+  { a1: '#f472b6', a2: '#818cf8', a3: '#2dd4bf' }, // Cyberpunk
+  { a1: '#34d399', a2: '#60a5fa', a3: '#fbbf24' }, // Forest
+  { a1: '#a78bfa', a2: '#fb7185', a3: '#38bdf8' }, // Royal
+  { a1: '#fcd34d', a2: '#f87171', a3: '#c084fc' }, // Candy
+];
+
 // Theme Toggle Component
 const ThemeToggle = () => {
   const [isDark, setIsDark] = useState(() => {
@@ -43,8 +50,21 @@ const ThemeToggle = () => {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    const root = document.documentElement;
+    root.setAttribute('data-theme', isDark ? 'dark' : 'light');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+    if (isDark) {
+      const palette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
+      root.style.setProperty('--accent-1', palette.a1);
+      root.style.setProperty('--accent-2', palette.a2);
+      root.style.setProperty('--accent-3', palette.a3);
+    } else {
+      // Reset to default neobrutalist bright colors in light mode
+      root.style.removeProperty('--accent-1');
+      root.style.removeProperty('--accent-2');
+      root.style.removeProperty('--accent-3');
+    }
   }, [isDark]);
 
   return (
