@@ -1,6 +1,7 @@
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Twitter, Mail, ExternalLink, ArrowRight, ArrowLeft } from 'lucide-react';
+import { getAllPosts, getPostBySlug, getFeaturedPost } from './lib/posts';
 
 // Fix for framer-motion v12+ type issues
 const MotionDiv = motion.div as React.FC<React.HTMLAttributes<HTMLDivElement> & {
@@ -31,6 +32,9 @@ const MotionA = motion.a as React.FC<React.AnchorHTMLAttributes<HTMLAnchorElemen
 
 const GridView = () => {
   const navigate = useNavigate();
+  const posts = getAllPosts();
+  const featuredPost = getFeaturedPost();
+
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -51,11 +55,8 @@ const GridView = () => {
     }
   };
 
-  const thoughts = [
-    { title: "Building a UEFI Environment", date: "Jan 03", color: "white" },
-    { title: "The beauty of compact-risk architecture", date: "Dec 28", color: "var(--accent-3)" },
-    { title: "Static sites are the future (again)", date: "Dec 15", color: "var(--accent-2)" },
-  ];
+  // Get recent posts (excluding featured)
+  const recentPosts = posts.filter(p => !p.featured).slice(0, 3);
 
   return (
     <MotionDiv
@@ -92,21 +93,24 @@ const GridView = () => {
           </div>
         </MotionDiv>
 
-        <MotionDiv
-          variants={item}
-          className="bento-item span-2"
-          onClick={() => navigate('/post/modernizing-hexo')}
-          style={{ cursor: 'pointer' }}
-        >
-          <div>
-            <div className="pill">FEATURED</div>
-            <h2>Modernizing my legacy Hexo blog to React</h2>
-            <p>A journey from a 5-year-old static site to a modern, dynamic experience.</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', fontWeight: 900 }}>
-            READ MORE <ArrowRight size={18} />
-          </div>
-        </MotionDiv>
+        {/* Featured Post - Dynamic */}
+        {featuredPost && (
+          <MotionDiv
+            variants={item}
+            className="bento-item span-2"
+            onClick={() => navigate(`/post/${featuredPost.slug}`)}
+            style={{ cursor: 'pointer' }}
+          >
+            <div>
+              <div className="pill">FEATURED</div>
+              <h2>{featuredPost.title}</h2>
+              <p>{featuredPost.excerpt}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', fontWeight: 900 }}>
+              READ MORE <ArrowRight size={18} />
+            </div>
+          </MotionDiv>
+        )}
 
         <MotionDiv variants={item} className="bento-item bg-teal">
           <h2 style={{ fontSize: '1.2rem' }}>Stack</h2>
@@ -121,18 +125,33 @@ const GridView = () => {
           <div style={{ marginTop: 'auto' }}><ExternalLink size={20} /></div>
         </MotionDiv>
 
+        {/* Recent Posts - Dynamic */}
         <MotionDiv variants={item} className="bento-item span-2">
           <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>Recent Thoughts</h2>
-          {thoughts.map((t, i) => (
-            <div key={i} style={{ padding: '0.8rem', border: '3px solid black', margin: '0.3rem 0', background: t.color, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
-              <span>{t.title}</span> <span style={{ opacity: 0.5 }}>{t.date}</span>
+          {recentPosts.map((post) => (
+            <div
+              key={post.slug}
+              onClick={() => navigate(`/post/${post.slug}`)}
+              style={{
+                padding: '0.8rem',
+                border: '3px solid black',
+                margin: '0.3rem 0',
+                background: post.color,
+                fontWeight: 700,
+                display: 'flex',
+                justifyContent: 'space-between',
+                cursor: 'pointer'
+              }}
+            >
+              <span>{post.title}</span>
+              <span style={{ opacity: 0.5 }}>{new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
             </div>
           ))}
         </MotionDiv>
 
         <MotionDiv variants={item} className="bento-item bg-yellow">
-          <h1 style={{ fontSize: '3rem', fontWeight: 900 }}>v2.0</h1>
-          <p style={{ fontWeight: 800 }}>MIGRATE SUCCESS</p>
+          <h1 style={{ fontSize: '3rem', fontWeight: 900 }}>{posts.length}</h1>
+          <p style={{ fontWeight: 800 }}>ARTICLES</p>
         </MotionDiv>
       </MotionDiv>
     </MotionDiv>
@@ -141,6 +160,18 @@ const GridView = () => {
 
 const PostView = () => {
   const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const post = slug ? getPostBySlug(slug) : undefined;
+
+  if (!post) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem' }}>
+        <h1>Post not found</h1>
+        <button onClick={() => navigate('/')}>Back to Home</button>
+      </div>
+    );
+  }
+
   return (
     <MotionDiv
       initial={{ opacity: 0, x: 20 }}
@@ -163,19 +194,16 @@ const PostView = () => {
       >
         <ArrowLeft size={24} /> BACK TO GRID
       </button>
-      <div className="pill">JAN 05, 2026</div>
+      <div className="pill">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
       <h1 style={{ fontSize: 'clamp(2.5rem, 8vw, 4rem)', fontWeight: 900, margin: '1rem 0', lineHeight: 1 }}>
-        Modernizing my legacy Hexo blog to React
+        {post.title}
       </h1>
       <div style={{ borderBottom: '4px solid black', margin: '2rem 0' }} />
-      <div style={{ fontSize: '1.2rem', lineHeight: 1.6, fontWeight: 500 }}>
-        <p>Five years ago, I set up a Hexo blog. It served me well, but as I enter my final year of university, I felt the need for something that better represents my current technical skills...</p>
-        <br />
-        <div style={{ padding: '2rem', background: 'var(--accent-3)', border: '4px solid black', boxShadow: '8px 8px 0 black' }}>
-          <h3 style={{ fontWeight: 900 }}>Placeholder for your article</h3>
-          <p>I've set up this space for you. Once you provide the content, I'll help you format it with the same Neobrutalist aesthetic!</p>
-        </div>
-      </div>
+      <article
+        className="prose"
+        style={{ fontSize: '1.1rem', lineHeight: 1.8, fontWeight: 500 }}
+        dangerouslySetInnerHTML={{ __html: post.content }}
+      />
     </MotionDiv>
   );
 };
@@ -186,7 +214,7 @@ const App = () => {
       <AnimatePresence mode="wait">
         <Routes>
           <Route path="/" element={<GridView />} />
-          <Route path="/post/:id" element={<PostView />} />
+          <Route path="/post/:slug" element={<PostView />} />
         </Routes>
       </AnimatePresence>
 
