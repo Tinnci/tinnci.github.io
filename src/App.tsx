@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Mail, ExternalLink, ArrowRight, ArrowLeft, Search, Moon, Sun, X } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { getAllPosts, getPostBySlug, getFeaturedPost, getAllTags, getAllCategories, type Post } from './lib/posts';
+import { getAllProjects, getFeaturedProjects } from './lib/projects';
 
 // Fix for framer-motion v12+ type issues
 const MotionDiv = motion.div as React.FC<React.HTMLAttributes<HTMLDivElement> & {
@@ -134,10 +135,61 @@ const SearchBox = ({ posts }: { posts: Post[] }) => {
   );
 };
 
+const ProjectsView = () => {
+  const navigate = useNavigate();
+  const projects = getAllProjects();
+
+  return (
+    <MotionDiv
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      style={{ padding: '2rem 0' }}
+    >
+      <button
+        onClick={() => navigate('/')}
+        className="pill"
+        style={{ marginBottom: '2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+      >
+        <ArrowLeft size={18} /> BACK HOME
+      </button>
+
+      <h1 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '2rem' }}>PROJECTS</h1>
+
+      <div className="bento-grid">
+        {projects.map((project) => (
+          <MotionDiv
+            key={project.slug}
+            whileHover={{ y: -5 }}
+            className="bento-item span-2"
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div className="pill">{project.status}</div>
+                <a href={project.link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
+                  <ExternalLink size={20} />
+                </a>
+              </div>
+              <h2 style={{ marginTop: '1rem' }}>{project.title}</h2>
+              <p>{project.description}</p>
+              <div className="tag-cloud" style={{ marginTop: '1rem' }}>
+                {project.tags.map(tag => (
+                  <span key={tag} className="pill" style={{ opacity: 0.7, fontSize: '0.7rem' }}>{tag}</span>
+                ))}
+              </div>
+            </div>
+          </MotionDiv>
+        ))}
+      </div>
+    </MotionDiv>
+  );
+};
+
 const GridView = () => {
   const navigate = useNavigate();
   const posts = getAllPosts();
   const featuredPost = getFeaturedPost();
+  const featuredProjects = getFeaturedProjects();
   const tags = getAllTags();
   const categories = getAllCategories();
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -309,10 +361,27 @@ const GridView = () => {
         </MotionDiv>
 
         {/* Projects */}
-        <MotionDiv variants={item} className="bento-item bg-yellow">
-          <h2 style={{ fontSize: '1.2rem' }}>Projects</h2>
-          <p>UEFI Shell prototype in Rust.</p>
-          <div style={{ marginTop: 'auto' }}><ExternalLink size={20} /></div>
+        <MotionDiv
+          variants={item}
+          className="bento-item bg-yellow"
+          onClick={() => navigate('/projects')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div>
+            <h2 style={{ fontSize: '1.2rem' }}>Projects</h2>
+            {featuredProjects.length > 0 ? (
+              <div>
+                <p style={{ fontWeight: 800 }}>{featuredProjects[0].title}</p>
+                <p style={{ fontSize: '0.9rem' }}>{featuredProjects[0].description}</p>
+              </div>
+            ) : (
+              <p>Check out my latest experimental works.</p>
+            )}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+            <span style={{ fontWeight: 900, fontSize: '0.8rem' }}>VIEW ALL</span>
+            <ArrowRight size={20} />
+          </div>
         </MotionDiv>
       </MotionDiv>
     </MotionDiv>
@@ -392,6 +461,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<GridView />} />
             <Route path="/post/:slug" element={<PostView />} />
+            <Route path="/projects" element={<ProjectsView />} />
           </Routes>
         </AnimatePresence>
 
