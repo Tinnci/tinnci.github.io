@@ -1,7 +1,7 @@
 ---
 title: UEFI Shell Prototype
 description: A lightweight UEFI shell environment written in Rust, focusing on system diagnostics and safe memory access.
-link: https://github.com/Tinnci/uefi-rs-shell
+link: ""
 tags: [Rust, UEFI, Low-level]
 status: active
 featured: true

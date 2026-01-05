@@ -1,7 +1,7 @@
 ---
 title: Bento UI Design System
 description: A Neobrutalist-inspired design system optimized for personal portfolios and experimental labs.
-link: https://github.com/Tinnci/bento-system
+link: ""
 tags: [React, CSS, Design]
 status: completed
 featured: true
