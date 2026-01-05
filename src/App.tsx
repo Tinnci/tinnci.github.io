@@ -195,14 +195,14 @@ const GridView = () => {
         {/* Bio Card */}
         <MotionDiv variants={item} className="bento-item span-2 row-2 bg-yellow">
           <div>
-            <div className="pill" style={{ background: 'white' }}>BIO</div>
+            <div className="pill">BIO</div>
             <h2 style={{ fontSize: '2.5rem' }}>I'm Tinnci.</h2>
             <p style={{ fontSize: '1.2rem', fontWeight: 600 }}>Senior student & Creative Developer.</p>
             <p style={{ marginTop: '1rem' }}>Focusing on the intersection of low-level systems and high-level design.</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <MotionA whileHover={{ y: -5 }} href="https://github.com/Tinnci/" target="_blank" rel="noopener noreferrer" style={{ color: 'black' }}><Github size={24} /></MotionA>
-            <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Mail size={24} /></MotionA>
+            <MotionA whileHover={{ y: -5 }} href="https://github.com/Tinnci/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}><Github size={24} /></MotionA>
+            <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'inherit' }}><Mail size={24} /></MotionA>
           </div>
         </MotionDiv>
 
@@ -234,7 +234,7 @@ const GridView = () => {
                 key={category}
                 className={`pill ${selectedCategory === category ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(selectedCategory === category ? null : category)}
-                style={{ background: 'white', cursor: 'pointer' }}
+                style={{ cursor: 'pointer' }}
               >
                 {category} ({count})
               </span>
@@ -296,7 +296,7 @@ const GridView = () => {
         </MotionDiv>
 
         {/* Stats */}
-        <MotionDiv variants={item} className="bento-item bg-coral" style={{ color: 'white' }}>
+        <MotionDiv variants={item} className="bento-item bg-coral">
           <h1 style={{ fontSize: '3rem', fontWeight: 900 }}>{posts.length}</h1>
           <p style={{ fontWeight: 800 }}>ARTICLES</p>
         </MotionDiv>
