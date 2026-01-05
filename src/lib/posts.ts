@@ -1,5 +1,5 @@
-import matter from 'gray-matter';
 import { marked } from 'marked';
+import * as yaml from 'js-yaml';
 
 export interface PostMeta {
     title: string;
@@ -16,6 +16,21 @@ export interface Post extends PostMeta {
     content: string;
 }
 
+// Simple frontmatter parser (browser compatible)
+function parseFrontmatter(raw: string): { data: Record<string, unknown>; content: string } {
+    const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
+    if (!match) {
+        return { data: {}, content: raw };
+    }
+
+    try {
+        const data = yaml.load(match[1]) as Record<string, unknown>;
+        return { data, content: match[2] };
+    } catch {
+        return { data: {}, content: raw };
+    }
+}
+
 // Import all markdown files from content/posts
 const postModules = import.meta.glob('/content/posts/*.md', {
     query: '?raw',
@@ -28,17 +43,17 @@ export function getAllPosts(): Post[] {
 
     for (const path in postModules) {
         const raw = postModules[path] as string;
-        const { data, content } = matter(raw);
+        const { data, content } = parseFrontmatter(raw);
 
         posts.push({
-            title: data.title || 'Untitled',
-            date: data.date || new Date().toISOString(),
-            slug: data.slug || path.split('/').pop()?.replace('.md', '') || '',
-            featured: data.featured || false,
-            color: data.color || 'white',
-            excerpt: data.excerpt || '',
-            category: data.category || 'Uncategorized',
-            tags: data.tags || [],
+            title: (data.title as string) || 'Untitled',
+            date: (data.date as string) || new Date().toISOString(),
+            slug: (data.slug as string) || path.split('/').pop()?.replace('.md', '') || '',
+            featured: (data.featured as boolean) || false,
+            color: (data.color as string) || 'white',
+            excerpt: (data.excerpt as string) || '',
+            category: (data.category as string) || 'Uncategorized',
+            tags: (data.tags as string[]) || [],
             content: marked(content) as string,
         });
     }
