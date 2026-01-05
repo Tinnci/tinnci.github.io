@@ -162,25 +162,104 @@ const ProjectsView = () => {
             key={project.slug}
             whileHover={{ y: -5 }}
             className="bento-item span-2"
+            onClick={() => navigate(`/project/${project.slug}`)}
+            style={{ cursor: 'pointer' }}
           >
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div className="pill">{project.status}</div>
-                <a href={project.link} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit' }}>
-                  <ExternalLink size={20} />
-                </a>
               </div>
               <h2 style={{ marginTop: '1rem' }}>{project.title}</h2>
               <p>{project.description}</p>
               <div className="tag-cloud" style={{ marginTop: '1rem' }}>
-                {project.tags.map(tag => (
+                {project.tags.map((tag: string) => (
                   <span key={tag} className="pill" style={{ opacity: 0.7, fontSize: '0.7rem' }}>{tag}</span>
                 ))}
               </div>
             </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', fontWeight: 900 }}>
+              VIEW DETAILS <ArrowRight size={18} />
+            </div>
           </MotionDiv>
         ))}
       </div>
+    </MotionDiv>
+  );
+};
+
+const ProjectDetailView = () => {
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+  const projects = getAllProjects();
+  const project = projects.find(p => p.slug === slug);
+
+  if (!project) {
+    return (
+      <div style={{ textAlign: 'center', padding: '4rem' }}>
+        <h1>Project not found</h1>
+        <button onClick={() => navigate('/projects')}>Back to Projects</button>
+      </div>
+    );
+  }
+
+  return (
+    <MotionDiv
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}
+    >
+      <button
+        onClick={() => navigate('/projects')}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          fontWeight: 900,
+          marginBottom: '2rem',
+          color: 'var(--fg)'
+        }}
+      >
+        <ArrowLeft size={24} /> BACK TO PROJECTS
+      </button>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <span className="pill">{project.status}</span>
+        {project.link && project.link !== '#' && (
+          <a
+            href={project.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="pill"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none', color: 'inherit' }}
+          >
+            <ExternalLink size={14} /> View on GitHub
+          </a>
+        )}
+      </div>
+
+      <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: 900, margin: '1rem 0', lineHeight: 1.1 }}>
+        {project.title}
+      </h1>
+
+      <p style={{ fontSize: '1.2rem', opacity: 0.8, marginBottom: '1.5rem' }}>{project.description}</p>
+
+      <div style={{ marginBottom: '1.5rem' }}>
+        {project.tags.map((tag: string) => (
+          <span key={tag} className="pill" style={{ fontSize: '0.75rem' }}>{tag}</span>
+        ))}
+      </div>
+
+      <div style={{ borderBottom: '4px solid var(--border)', margin: '1.5rem 0' }} />
+
+      <article
+        className="prose"
+        style={{ fontSize: '1.1rem', lineHeight: 1.8, fontWeight: 500 }}
+        dangerouslySetInnerHTML={{ __html: project.content }}
+      />
     </MotionDiv>
   );
 };
@@ -462,6 +541,7 @@ const App = () => {
             <Route path="/" element={<GridView />} />
             <Route path="/post/:slug" element={<PostView />} />
             <Route path="/projects" element={<ProjectsView />} />
+            <Route path="/project/:slug" element={<ProjectDetailView />} />
           </Routes>
         </AnimatePresence>
 
