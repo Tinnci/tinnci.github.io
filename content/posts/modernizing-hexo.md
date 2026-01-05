@@ -4,6 +4,12 @@ date: 2026-01-05
 slug: modernizing-hexo
 featured: true
 color: white
+category: Development
+tags:
+  - React
+  - TypeScript
+  - Vite
+  - Bun
 excerpt: A journey from a 5-year-old static site to a modern, dynamic experience.
 ---
 

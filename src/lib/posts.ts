@@ -8,6 +8,8 @@ export interface PostMeta {
     featured: boolean;
     color: string;
     excerpt: string;
+    category: string;
+    tags: string[];
 }
 
 export interface Post extends PostMeta {
@@ -35,6 +37,8 @@ export function getAllPosts(): Post[] {
             featured: data.featured || false,
             color: data.color || 'white',
             excerpt: data.excerpt || '',
+            category: data.category || 'Uncategorized',
+            tags: data.tags || [],
             content: marked(content) as string,
         });
     }
@@ -49,4 +53,38 @@ export function getPostBySlug(slug: string): Post | undefined {
 
 export function getFeaturedPost(): Post | undefined {
     return getAllPosts().find(post => post.featured);
+}
+
+export function getAllTags(): { tag: string; count: number }[] {
+    const tagMap = new Map<string, number>();
+
+    getAllPosts().forEach(post => {
+        post.tags.forEach(tag => {
+            tagMap.set(tag, (tagMap.get(tag) || 0) + 1);
+        });
+    });
+
+    return Array.from(tagMap.entries())
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count);
+}
+
+export function getAllCategories(): { category: string; count: number }[] {
+    const categoryMap = new Map<string, number>();
+
+    getAllPosts().forEach(post => {
+        categoryMap.set(post.category, (categoryMap.get(post.category) || 0) + 1);
+    });
+
+    return Array.from(categoryMap.entries())
+        .map(([category, count]) => ({ category, count }))
+        .sort((a, b) => b.count - a.count);
+}
+
+export function getPostsByTag(tag: string): Post[] {
+    return getAllPosts().filter(post => post.tags.includes(tag));
+}
+
+export function getPostsByCategory(category: string): Post[] {
+    return getAllPosts().filter(post => post.category === category);
 }

@@ -4,6 +4,11 @@ date: 2026-01-03
 slug: uefi-environment
 featured: false
 color: white
+category: Low-Level
+tags:
+  - Rust
+  - UEFI
+  - Systems Programming
 excerpt: Exploring the depths of pre-boot programming with Rust.
 ---
 

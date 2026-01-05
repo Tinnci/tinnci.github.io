@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "framer-motion": "^12.23.28",
+    "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.562.0",
     "marked": "^17.0.1",
