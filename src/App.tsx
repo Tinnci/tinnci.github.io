@@ -2,6 +2,33 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Github, Twitter, Mail, ExternalLink, ArrowRight, ArrowLeft } from 'lucide-react';
 
+// Fix for framer-motion v12+ type issues
+const MotionDiv = motion.div as React.FC<React.HTMLAttributes<HTMLDivElement> & {
+  initial?: object;
+  animate?: object | string;
+  exit?: object;
+  variants?: object;
+  whileHover?: object;
+  whileTap?: object;
+  transition?: object;
+  key?: string;
+  onClick?: () => void;
+  style?: React.CSSProperties;
+  className?: string;
+  children?: React.ReactNode;
+}>;
+
+const MotionH1 = motion.h1 as React.FC<React.HTMLAttributes<HTMLHeadingElement> & {
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
+}>;
+
+const MotionA = motion.a as React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  whileHover?: object;
+  style?: React.CSSProperties;
+  children?: React.ReactNode;
+}>;
+
 const GridView = () => {
   const navigate = useNavigate();
   const container = {
@@ -31,27 +58,27 @@ const GridView = () => {
   ];
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, y: -20 }}
     >
       <header style={{ textAlign: 'center', marginBottom: '4rem', marginTop: '2rem' }}>
-        <motion.h1 style={{ fontSize: 'clamp(3rem, 10vw, 5rem)', fontWeight: 900, lineHeight: 1 }}>
+        <MotionH1 style={{ fontSize: 'clamp(3rem, 10vw, 5rem)', fontWeight: 900, lineHeight: 1 }}>
           TINNCI<span style={{ color: 'var(--accent-1)' }}>.</span>IO
-        </motion.h1>
+        </MotionH1>
         <p style={{ fontWeight: 700, marginTop: '1rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
           Digital Garden & Experimental Lab
         </p>
       </header>
 
-      <motion.div
+      <MotionDiv
         className="bento-grid"
         variants={container}
         initial="hidden"
         animate="show"
       >
-        <motion.div variants={item} className="bento-item span-2 row-2 bg-yellow">
+        <MotionDiv variants={item} className="bento-item span-2 row-2 bg-yellow">
           <div>
             <div className="pill" style={{ background: 'white' }}>BIO</div>
             <h2 style={{ fontSize: '2.5rem' }}>I'm Tinnci.</h2>
@@ -59,13 +86,13 @@ const GridView = () => {
             <p style={{ marginTop: '1rem' }}>Focusing on the intersection of low-level systems and high-level design.</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-            <motion.a whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Github size={24} /></motion.a>
-            <motion.a whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Twitter size={24} /></motion.a>
-            <motion.a whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Mail size={24} /></motion.a>
+            <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Github size={24} /></MotionA>
+            <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Twitter size={24} /></MotionA>
+            <MotionA whileHover={{ y: -5 }} href="#" style={{ color: 'black' }}><Mail size={24} /></MotionA>
           </div>
-        </motion.div>
+        </MotionDiv>
 
-        <motion.div
+        <MotionDiv
           variants={item}
           className="bento-item span-2"
           onClick={() => navigate('/post/modernizing-hexo')}
@@ -79,43 +106,43 @@ const GridView = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', fontWeight: 900 }}>
             READ MORE <ArrowRight size={18} />
           </div>
-        </motion.div>
+        </MotionDiv>
 
-        <motion.div variants={item} className="bento-item bg-teal">
+        <MotionDiv variants={item} className="bento-item bg-teal">
           <h2 style={{ fontSize: '1.2rem' }}>Stack</h2>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
             {['React', 'Rust', 'Bun', 'Vite'].map(s => <span key={s} className="pill" style={{ background: 'white' }}>{s}</span>)}
           </div>
-        </motion.div>
+        </MotionDiv>
 
-        <motion.div variants={item} className="bento-item bg-coral" style={{ color: 'white' }}>
+        <MotionDiv variants={item} className="bento-item bg-coral" style={{ color: 'white' }}>
           <h2 style={{ fontSize: '1.2rem' }}>Projects</h2>
           <p>UEFI Shell prototype in Rust.</p>
           <div style={{ marginTop: 'auto' }}><ExternalLink size={20} /></div>
-        </motion.div>
+        </MotionDiv>
 
-        <motion.div variants={item} className="bento-item span-2">
+        <MotionDiv variants={item} className="bento-item span-2">
           <h2 style={{ marginBottom: '1rem', fontSize: '1.2rem' }}>Recent Thoughts</h2>
           {thoughts.map((t, i) => (
             <div key={i} style={{ padding: '0.8rem', border: '3px solid black', margin: '0.3rem 0', background: t.color, fontWeight: 700, display: 'flex', justifyContent: 'space-between' }}>
               <span>{t.title}</span> <span style={{ opacity: 0.5 }}>{t.date}</span>
             </div>
           ))}
-        </motion.div>
+        </MotionDiv>
 
-        <motion.div variants={item} className="bento-item bg-yellow">
+        <MotionDiv variants={item} className="bento-item bg-yellow">
           <h1 style={{ fontSize: '3rem', fontWeight: 900 }}>v2.0</h1>
           <p style={{ fontWeight: 800 }}>MIGRATE SUCCESS</p>
-        </motion.div>
-      </motion.div>
-    </motion.div>
+        </MotionDiv>
+      </MotionDiv>
+    </MotionDiv>
   );
 };
 
 const PostView = () => {
   const navigate = useNavigate();
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -149,7 +176,7 @@ const PostView = () => {
           <p>I've set up this space for you. Once you provide the content, I'll help you format it with the same Neobrutalist aesthetic!</p>
         </div>
       </div>
-    </motion.div>
+    </MotionDiv>
   );
 };
 
