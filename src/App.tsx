@@ -33,10 +33,17 @@ const MotionA = motion.a as React.FC<React.AnchorHTMLAttributes<HTMLAnchorElemen
 }>;
 
 const PALETTES = [
-  { a1: '#f472b6', a2: '#818cf8', a3: '#2dd4bf' }, // Cyberpunk
-  { a1: '#34d399', a2: '#60a5fa', a3: '#fbbf24' }, // Forest
-  { a1: '#a78bfa', a2: '#fb7185', a3: '#38bdf8' }, // Royal
-  { a1: '#fcd34d', a2: '#f87171', a3: '#c084fc' }, // Candy
+  { a1: '#f472b6', a2: '#818cf8', a3: '#2dd4bf' }, // Cyberpunk (Pink, Indigo, Teal)
+  { a1: '#34d399', a2: '#60a5fa', a3: '#fbbf24' }, // Forest (Emerald, Blue, Amber)
+  { a1: '#a78bfa', a2: '#fb7185', a3: '#38bdf8' }, // Royal (Violet, Rose, Sky)
+  { a1: '#fcd34d', a2: '#f87171', a3: '#c084fc' }, // Candy (Amber, Red, Purple)
+  { a1: '#22d3ee', a2: '#818cf8', a3: '#c084fc' }, // Ocean (Cyan, Indigo, Purple)
+  { a1: '#fb923c', a2: '#db2777', a3: '#4f46e5' }, // Sunset (Orange, Pink, Indigo)
+  { a1: '#94a3b8', a2: '#334155', a3: '#0f172a' }, // Slate (Light Slate, Dark Slate, Navy)
+  { a1: '#5eead4', a2: '#0d9488', a3: '#115e59' }, // Mint (Mint, Teal, Dark Teal)
+  { a1: '#fca5a5', a2: '#f87171', a3: '#ef4444' }, // Monochromatic Red
+  { a1: '#bef264', a2: '#65a30d', a3: '#3f6212' }, // Lime/Matcha
+  { a1: '#67e8f9', a2: '#06b6d4', a3: '#155e75' }, // Sky/Deep Sea
 ];
 
 // Theme Toggle Component
