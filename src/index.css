@@ -1,14 +1,20 @@
 :root {
   --bg: #f8f9fa;
   --fg: #1a1a1a;
-  --accent-1: #ff6b6b;
-  --accent-2: #4ecdc4;
-  --accent-3: #ffe66d;
+  /* Default accent values */
+  --raw-accent-1: #ff6b6b;
+  --raw-accent-2: #4ecdc4;
+  --raw-accent-3: #ffe66d;
+
+  /* In light mode, accents are 100% vibrant */
+  --accent-1: var(--raw-accent-1);
+  --accent-2: var(--raw-accent-2);
+  --accent-3: var(--raw-accent-3);
+
   --card-bg: #ffffff;
   --border: #000000;
   --shadow: #000000;
   --font-main: 'Inter', system-ui, -apple-system, sans-serif;
-  --accent-rgb-1: 255, 107, 107;
 }
 
 [data-theme="dark"] {
@@ -17,13 +23,12 @@
   --card-bg: #111111;
   --border: #262626;
   --shadow: #000000;
-  /* Dynamic accents will override these */
-  --accent-1: #6366f1;
-  /* Indigo */
-  --accent-2: #10b981;
-  /* Emerald */
-  --accent-3: #f59e0b;
-  /* Amber */
+
+  /* Toning down accents for dark mode: mixed with 20% background to "shade" them */
+  /* This makes them feel less "neon" and more integrated into the dark theme */
+  --accent-1: color-mix(in srgb, var(--raw-accent-1), var(--bg) 25%);
+  --accent-2: color-mix(in srgb, var(--raw-accent-2), var(--bg) 25%);
+  --accent-3: color-mix(in srgb, var(--raw-accent-3), var(--bg) 25%);
 }
 
 [data-theme="dark"] .prose code {

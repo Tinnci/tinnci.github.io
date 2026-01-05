@@ -63,14 +63,14 @@ const ThemeToggle = () => {
 
     if (isDark) {
       const palette = PALETTES[Math.floor(Math.random() * PALETTES.length)];
-      root.style.setProperty('--accent-1', palette.a1);
-      root.style.setProperty('--accent-2', palette.a2);
-      root.style.setProperty('--accent-3', palette.a3);
+      root.style.setProperty('--raw-accent-1', palette.a1);
+      root.style.setProperty('--raw-accent-2', palette.a2);
+      root.style.setProperty('--raw-accent-3', palette.a3);
     } else {
       // Reset to default neobrutalist bright colors in light mode
-      root.style.removeProperty('--accent-1');
-      root.style.removeProperty('--accent-2');
-      root.style.removeProperty('--accent-3');
+      root.style.removeProperty('--raw-accent-1');
+      root.style.removeProperty('--raw-accent-2');
+      root.style.removeProperty('--raw-accent-3');
     }
   }, [isDark]);
 
