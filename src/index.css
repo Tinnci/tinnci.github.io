@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
 :root {
   --bg: #f8f9fa;
   --fg: #1a1a1a;
@@ -14,7 +16,7 @@
   --card-bg: #ffffff;
   --border: #000000;
   --shadow: #000000;
-  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-main: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 [data-theme="dark"] {
@@ -241,6 +243,11 @@ body {
   opacity: 0.5;
 }
 
+/* Fix for search icon brightness */
+.search-box-container svg {
+  color: var(--fg);
+}
+
 /* Theme toggle button */
 .theme-toggle {
   position: fixed;
@@ -259,6 +266,13 @@ body {
   z-index: 1000;
   transition: all 0.2s ease;
   box-shadow: 4px 4px 0 var(--shadow);
+  color: var(--fg);
+  /* Ensure icon color matches theme foreground */
+}
+
+[data-theme="dark"] .theme-toggle {
+  color: #fbbf24;
+  /* Make sun icon golden in dark mode */
 }
 
 .theme-toggle:hover {
@@ -392,6 +406,79 @@ body {
 
 .search-result-item:hover {
   background: var(--accent-3);
+}
+
+/* Logo Specific styles */
+.logo-container {
+  display: inline-block;
+  padding: 1.2rem 3.5rem;
+  /* Increased horizontal padding to prevent italic cropping */
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .logo-container {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.logo-container:hover {
+  transform: scale(1.05) rotate(-1deg);
+  border-color: var(--accent-1);
+  background: rgba(var(--raw-accent-1), 0.05);
+}
+
+.logo-shimmer {
+  display: block;
+  /* Better support for background-clip across spans */
+  background: linear-gradient(90deg,
+      var(--fg) 0%,
+      var(--accent-1) 50%,
+      var(--fg) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.logo-condensed {
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+}
+
+.logo-dot {
+  font-weight: 900;
+  color: var(--accent-1);
+  -webkit-text-fill-color: var(--accent-1);
+  margin: 0 0.05em;
+}
+
+.logo-io {
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  /* Tighter spacing as requested */
+  opacity: 1;
+  /* Ensure visibility */
+  -webkit-text-fill-color: transparent;
+  /* Must explicitly set for shimmer inheritance */
+  padding-right: 0.1em;
+  /* Prevent 'O' truncation from italics */
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% center;
+  }
 }
 
 .search-result-item:last-child {

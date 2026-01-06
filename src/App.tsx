@@ -7,6 +7,7 @@ import { getAllPosts, getPostBySlug, getFeaturedPost, getAllTags, getAllCategori
 import { getAllProjects, getFeaturedProjects } from './lib/projects';
 
 // Fix for framer-motion v12+ type issues
+// Fix for framer-motion v12+ type issues
 const MotionDiv = motion.div as React.FC<React.HTMLAttributes<HTMLDivElement> & {
   initial?: object | string;
   animate?: object | string;
@@ -23,13 +24,18 @@ const MotionDiv = motion.div as React.FC<React.HTMLAttributes<HTMLDivElement> & 
 }>;
 
 const MotionH1 = motion.h1 as React.FC<React.HTMLAttributes<HTMLHeadingElement> & {
+  initial?: object | string;
+  animate?: object | string;
+  whileHover?: object;
   style?: React.CSSProperties;
+  className?: string;
   children?: React.ReactNode;
 }>;
 
 const MotionA = motion.a as React.FC<React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   whileHover?: object;
   style?: React.CSSProperties;
+  className?: string;
   children?: React.ReactNode;
 }>;
 
@@ -96,9 +102,9 @@ const SearchBox = ({ posts }: { posts: Post[] }) => {
   const results = query ? fuse.search(query).slice(0, 5) : [];
 
   return (
-    <div style={{ position: 'relative', marginBottom: '2rem' }}>
+    <div className="search-box-container" style={{ position: 'relative', marginBottom: '2rem' }}>
       <div style={{ position: 'relative' }}>
-        <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }} />
+        <Search size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
         <input
           type="text"
           className="search-input"
@@ -314,10 +320,14 @@ const GridView = () => {
       exit={{ opacity: 0, y: -20 }}
     >
       <header style={{ textAlign: 'center', marginBottom: '3rem', marginTop: '2rem' }}>
-        <MotionH1 style={{ fontSize: 'clamp(3rem, 10vw, 5rem)', fontWeight: 900, lineHeight: 1 }}>
-          TINNCI<span style={{ color: 'var(--accent-1)' }}>.</span>IO
-        </MotionH1>
-        <p style={{ fontWeight: 700, marginTop: '1rem', textTransform: 'uppercase', letterSpacing: '2px' }}>
+        <div className="logo-container">
+          <MotionH1 className="logo-shimmer" style={{ fontSize: 'clamp(2.5rem, 8vw, 4.2rem)', lineHeight: 1 }}>
+            <span className="logo-condensed">TINNCI</span>
+            <span className="logo-dot">.</span>
+            <span className="logo-io">IO</span>
+          </MotionH1>
+        </div>
+        <p style={{ fontWeight: 700, marginTop: '2rem', textTransform: 'uppercase', letterSpacing: '2px', opacity: 0.7 }}>
           Digital Garden & Experimental Lab
         </p>
       </header>
