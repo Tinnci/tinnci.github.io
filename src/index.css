@@ -358,6 +358,29 @@ body {
   color: #00ff41;
   /* Classic terminal green */
   font-family: 'Consolas', 'Monaco', monospace;
+
+  /* Firefox Scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) #0d0d0d;
+}
+
+/* Custom Scrollbar for Terminal Code Blocks (Chrome/Safari) */
+.prose pre code::-webkit-scrollbar {
+  height: 12px;
+}
+
+.prose pre code::-webkit-scrollbar-track {
+  background: #0d0d0d;
+  border-top: 2px solid var(--border);
+}
+
+.prose pre code::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 2px solid #333;
+}
+
+.prose pre code::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-2);
 }
 
 .prose table {
