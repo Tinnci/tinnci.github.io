@@ -210,60 +210,53 @@ const ProjectDetailView = () => {
 
   return (
     <MotionDiv
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}
     >
-      <button
-        onClick={() => navigate('/projects')}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          fontWeight: 900,
-          marginBottom: '2rem',
-          color: 'var(--fg)'
-        }}
-      >
-        <ArrowLeft size={24} /> BACK TO PROJECTS
-      </button>
+      <div className="brutal-header-card">
+        <div className="brutal-meta">
+          <span className="pill">{project.status}</span>
+        </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <span className="pill">{project.status}</span>
-        {project.link && project.link !== '#' && (
-          <a
-            href={project.link}
-            target="_blank"
-            rel="noopener noreferrer"
+        <h1 className="brutal-title">{project.title}</h1>
+
+        <p style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '2rem', opacity: 0.8 }}>
+          {project.description}
+        </p>
+
+        <div className="brutal-action-bar">
+          <button
+            onClick={() => navigate('/projects')}
             className="pill"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none', color: 'inherit' }}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}
           >
-            <ExternalLink size={14} /> View on GitHub
-          </a>
-        )}
+            <ArrowLeft size={18} /> BACK TO PROJECTS
+          </button>
+
+          <div className="tag-cloud" style={{ margin: 0 }}>
+            {project.tags.map((tag: string) => (
+              <span key={tag} className="pill" style={{ fontSize: '0.75rem' }}>{tag}</span>
+            ))}
+            {project.link && project.link !== '#' && (
+              <a
+                href={project.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pill"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none', color: 'inherit' }}
+              >
+                <ExternalLink size={14} /> GITHUB
+              </a>
+            )}
+          </div>
+        </div>
       </div>
-
-      <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: 900, margin: '1rem 0', lineHeight: 1.1 }}>
-        {project.title}
-      </h1>
-
-      <p style={{ fontSize: '1.2rem', opacity: 0.8, marginBottom: '1.5rem' }}>{project.description}</p>
-
-      <div style={{ marginBottom: '1.5rem' }}>
-        {project.tags.map((tag: string) => (
-          <span key={tag} className="pill" style={{ fontSize: '0.75rem' }}>{tag}</span>
-        ))}
-      </div>
-
-      <div style={{ borderBottom: '4px solid var(--border)', margin: '1.5rem 0' }} />
 
       <article
         className="prose"
-        style={{ fontSize: '1.1rem', lineHeight: 1.8, fontWeight: 500 }}
+        style={{ fontSize: '1.15rem', lineHeight: 1.8, maxWidth: '800px', margin: '0 auto' }}
         dangerouslySetInnerHTML={{ __html: project.content }}
       />
     </MotionDiv>
@@ -371,7 +364,12 @@ const GridView = () => {
         </p>
       </header>
 
-      <SearchBox posts={posts} />
+      <section className="control-panel">
+        <div>
+          <label className="control-label">Search Archives</label>
+          <SearchBox posts={posts} />
+        </div>
+      </section>
 
       <WindMarquee />
 
@@ -534,48 +532,39 @@ const PostView = () => {
 
   return (
     <MotionDiv
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.98 }}
+      style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}
     >
-      <button
-        onClick={() => navigate('/')}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          fontWeight: 900,
-          marginBottom: '2rem',
-          color: 'var(--fg)'
-        }}
-      >
-        <ArrowLeft size={24} /> BACK
-      </button>
+      <div className="brutal-header-card">
+        <div className="brutal-meta">
+          <span className="pill">{post.category}</span>
+          <span className="pill">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <span className="pill">{post.category}</span>
-        <span className="pill">{new Date(post.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+        <h1 className="brutal-title">{post.title}</h1>
+
+        <div className="brutal-action-bar">
+          <button
+            onClick={() => navigate('/')}
+            className="pill"
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}
+          >
+            <ArrowLeft size={18} /> BACK TO HOME
+          </button>
+
+          <div className="tag-cloud" style={{ margin: 0 }}>
+            {post.tags.map(tag => (
+              <span key={tag} className="pill" style={{ fontSize: '0.75rem' }}>{tag}</span>
+            ))}
+          </div>
+        </div>
       </div>
-
-      <h1 style={{ fontSize: 'clamp(2rem, 6vw, 3.5rem)', fontWeight: 900, margin: '1rem 0', lineHeight: 1.1 }}>
-        {post.title}
-      </h1>
-
-      <div style={{ marginBottom: '1.5rem' }}>
-        {post.tags.map(tag => (
-          <span key={tag} className="pill" style={{ fontSize: '0.75rem' }}>{tag}</span>
-        ))}
-      </div>
-
-      <div style={{ borderBottom: '4px solid var(--border)', margin: '1.5rem 0' }} />
 
       <article
         className="prose"
-        style={{ fontSize: '1.1rem', lineHeight: 1.8, fontWeight: 500 }}
+        style={{ fontSize: '1.15rem', lineHeight: 1.8, maxWidth: '800px', margin: '0 auto' }}
         dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </MotionDiv>
