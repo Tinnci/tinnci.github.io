@@ -511,6 +511,106 @@ const GridView = () => {
           </div>
         </MotionDiv>
       </MotionDiv>
+
+      {/* View All Archives Call-to-Action */}
+      <div style={{ marginTop: '4rem', textAlign: 'center' }}>
+        <button
+          onClick={() => navigate('/archive')}
+          className="btn-brutal primary"
+          style={{ width: '100%', maxWidth: '1200px', display: 'flex', justifyContent: 'center' }}
+        >
+          EXPLORE COMPLETE ARCHIVES <ArrowRight size={24} style={{ marginLeft: '1rem' }} />
+        </button>
+      </div>
+    </MotionDiv>
+  );
+};
+
+const ArchiveView = () => {
+  const navigate = useNavigate();
+  const posts = getAllPosts();
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 6;
+
+  const totalPages = Math.ceil(posts.length / postsPerPage);
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
+
+  return (
+    <MotionDiv
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      style={{ padding: '2rem 0' }}
+    >
+      <button
+        onClick={() => navigate('/')}
+        className="btn-brutal"
+        style={{ marginBottom: '3rem' }}
+      >
+        <ArrowLeft size={18} /> BACK TO HOME
+      </button>
+
+      <div className="brutal-header-card" style={{ padding: '3rem 2.5rem' }}>
+        <h1 className="brutal-title" style={{ margin: 0 }}>The Archives</h1>
+        <p style={{ marginTop: '1rem', fontWeight: 600, opacity: 0.7 }}>
+          A COMPLETE CHRONOLOGICAL LOG OF ALL DISPENSATIONS.
+        </p>
+      </div>
+
+      <div className="bento-grid">
+        {currentPosts.map((post) => (
+          <MotionDiv
+            key={post.slug}
+            whileHover={{ y: -5 }}
+            className="bento-item span-2"
+            onClick={() => navigate(`/post/${post.slug}`)}
+            style={{ cursor: 'pointer' }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="pill">{post.category}</span>
+                <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>{new Date(post.date).toLocaleDateString()}</span>
+              </div>
+              <h2 style={{ marginTop: '1rem' }}>{post.title}</h2>
+              <p>{post.excerpt}</p>
+            </div>
+            <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {post.tags.map(tag => (
+                <span key={tag} className="pill" style={{ fontSize: '0.65rem', opacity: 0.7 }}>{tag}</span>
+              ))}
+            </div>
+          </MotionDiv>
+        ))}
+      </div>
+
+      <div className="pagination-container">
+        <div className="pagination-group">
+          <button
+            className={`pagination-btn prev ${currentPage === 1 ? 'disabled' : ''}`}
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            <ArrowLeft size={24} /> PREV
+          </button>
+
+          <div className="pagination-counter">
+            PAGE
+            <div className="counter-box">{currentPage.toString().padStart(2, '0')}</div>
+            OF
+            <div className="counter-box">{totalPages.toString().padStart(2, '0')}</div>
+          </div>
+
+          <button
+            className={`pagination-btn next ${currentPage === totalPages ? 'disabled' : ''}`}
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            NEXT <ArrowRight size={24} />
+          </button>
+        </div>
+      </div>
     </MotionDiv>
   );
 };
@@ -580,6 +680,7 @@ const App = () => {
             <Route path="/post/:slug" element={<PostView />} />
             <Route path="/projects" element={<ProjectsView />} />
             <Route path="/project/:slug" element={<ProjectDetailView />} />
+            <Route path="/archive" element={<ArchiveView />} />
           </Routes>
         </AnimatePresence>
 
