@@ -30,7 +30,12 @@ const projectModules = import.meta.glob('/content/projects/*.md', {
     eager: true
 });
 
+// Singleton cache for parsed projects
+let cachedProjects: Project[] | null = null;
+
 export function getAllProjects(): Project[] {
+    if (cachedProjects) return cachedProjects;
+
     const projects: Project[] = [];
 
     for (const path in projectModules) {
@@ -49,7 +54,8 @@ export function getAllProjects(): Project[] {
         });
     }
 
-    return projects;
+    cachedProjects = projects;
+    return cachedProjects;
 }
 
 export function getFeaturedProjects(): Project[] {

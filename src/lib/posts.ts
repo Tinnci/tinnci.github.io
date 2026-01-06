@@ -38,7 +38,12 @@ const postModules = import.meta.glob('/content/posts/*.md', {
     eager: true
 });
 
+// Singleton cache for parsed posts
+let cachedPosts: Post[] | null = null;
+
 export function getAllPosts(): Post[] {
+    if (cachedPosts) return cachedPosts;
+
     const posts: Post[] = [];
 
     for (const path in postModules) {
@@ -58,8 +63,9 @@ export function getAllPosts(): Post[] {
         });
     }
 
-    // Sort by date descending
-    return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Sort by date descending and cache the result
+    cachedPosts = posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return cachedPosts;
 }
 
 export function getPostBySlug(slug: string): Post | undefined {
