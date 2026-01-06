@@ -384,7 +384,7 @@ const GridView = () => {
           <div>
             <div className="pill">BIO</div>
             <h2 style={{ fontSize: '2.5rem' }}>I'm Tinnci.</h2>
-            <p style={{ fontSize: '1.2rem', fontWeight: 600 }}>Senior student & Creative Developer.</p>
+            <p style={{ fontSize: '1.2rem', fontWeight: 600 }}>Current student & Creative Developer.</p>
             <p style={{ marginTop: '1rem' }}>Focusing on the intersection of low-level systems and high-level design.</p>
           </div>
           <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
