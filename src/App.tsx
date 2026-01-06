@@ -272,11 +272,18 @@ const ProjectDetailView = () => {
 
 const WindMarquee = () => {
   const words = [
-    "TIME IS LIFE ITSELF",
+    "⚡️ TIME IS LIFE ITSELF",
     "MANAGE ENERGY, NOT TIME",
+    "LESS PERFECTION, MORE CHARACTER",
+    "RAW. UNFILTERED. AUTHENTIC",
+    "010101 // BUILDING THE FUTURE",
+    "PIXEL PERFECT IS OVERRATED",
+    "HIGH PERFORMANCE // LOW BULLSHIT",
+    "飘风不终朝，骤雨不终日",
+    "👾 CONNECTING THE DOTS",
+    "STAY HYDRATED & KEEP CREATING",
     "WE OVERCOME",
-    "WALOYO",
-    "飘风不终朝，骤雨不终日"
+    "WALOYO"
   ];
 
   const content = (
