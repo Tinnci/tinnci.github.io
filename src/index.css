@@ -484,3 +484,64 @@ body {
 .search-result-item:last-child {
   border-bottom: none;
 }
+
+/* Wind Marquee Component */
+.marquee-container {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  background: var(--accent-3);
+  border-top: 4px solid var(--border);
+  border-bottom: 4px solid var(--border);
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0;
+  margin-bottom: 3rem;
+  /* Hard shadow to give it weight */
+  box-shadow: 0 4px 0 var(--shadow);
+  z-index: 10;
+}
+
+.marquee-content {
+  display: flex;
+  gap: 2rem;
+  animation: scroll 30s linear infinite;
+  width: max-content;
+}
+
+.marquee-text {
+  font-family: var(--font-main);
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #000000;
+  /* Always black for maximum contrast on yellow */
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+}
+
+.marquee-separator {
+  margin: 0 1.5rem;
+  width: 30px;
+  height: 4px;
+  background: #000;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Pause on hover for accessibility/readability */
+.marquee-container:hover .marquee-content {
+  animation-play-state: paused;
+}

@@ -270,6 +270,38 @@ const ProjectDetailView = () => {
   );
 };
 
+const WindMarquee = () => {
+  const words = [
+    "TIME IS LIFE ITSELF",
+    "MANAGE ENERGY, NOT TIME",
+    "WE OVERCOME",
+    "WALOYO",
+    "飘风不终朝，骤雨不终日"
+  ];
+
+  const content = (
+    <div className="marquee-text">
+      {words.map((word, i) => (
+        <span key={i} style={{ display: 'flex', alignItems: 'center' }}>
+          {word}
+          <span className="marquee-separator" />
+        </span>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="marquee-container">
+      <div className="marquee-content">
+        {content}
+        {content}
+        {content}
+        {content}
+      </div>
+    </div>
+  );
+};
+
 const GridView = () => {
   const navigate = useNavigate();
   const posts = getAllPosts();
@@ -333,6 +365,8 @@ const GridView = () => {
       </header>
 
       <SearchBox posts={posts} />
+
+      <WindMarquee />
 
       <MotionDiv
         className="bento-grid"
