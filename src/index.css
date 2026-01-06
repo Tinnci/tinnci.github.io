@@ -943,3 +943,43 @@ body {
     border-bottom: 4px solid var(--border);
   }
 }
+/* --- NEOBRUTALISM EXIT ANIMATIONS --- */
+
+/* 1. Close / Dismiss: Heavy Drop */
+@keyframes drop-out {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120vh) rotate(15deg); opacity: 1; }
+}
+
+.exit-drop {
+  animation: drop-out 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+
+/* 2. Exit: CRT Off */
+@keyframes turn-off {
+  0% { transform: scale(1, 1); filter: brightness(1); }
+  40% { transform: scale(1, 0.05); filter: brightness(2); }
+  100% { transform: scale(0, 0); filter: brightness(0); }
+}
+
+.exit-crt {
+  animation: turn-off 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+/* 3. Button Feedback: Danger / Shake */
+.btn-danger-brutal {
+  background: #ff4d4d !important;
+  color: #000 !important;
+  border-color: #000 !important;
+}
+
+.btn-danger-brutal:hover {
+  background: #ff0000 !important;
+  animation: glitch-shake 0.2s steps(4) infinite !important;
+}
+
+.btn-danger-brutal:active {
+  transform: translate(4px, 4px) !important;
+  box-shadow: 0 0 0 var(--shadow) !important;
+  animation: none !important;
+}

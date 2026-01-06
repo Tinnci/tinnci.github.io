@@ -141,23 +141,34 @@ const SearchBox = ({ posts }: { posts: Post[] }) => {
   );
 };
 
+// Shared Transition Variants
+const BRUTAL_TRANSITIONS = {
+  pageEnter: {
+    initial: { y: 100, opacity: 0 },
+    animate: { y: 0, opacity: 1 },
+    exit: { x: '100%', transition: { ease: 'easeIn', duration: 0.3 } }, // Card Swipe
+    transition: { ease: [0, 1.3, 1, 1], duration: 0.5 } // Curtain Reveal
+  },
+  dismiss: {
+    exit: { y: '120vh', rotate: 15, transition: { ease: 'easeIn', duration: 0.4 } } // Heavy Drop
+  }
+};
+
 const ProjectsView = () => {
   const navigate = useNavigate();
   const projects = getAllProjects();
 
   return (
     <MotionDiv
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      {...BRUTAL_TRANSITIONS.pageEnter}
       style={{ padding: '2rem 0' }}
     >
       <button
         onClick={() => navigate('/')}
-        className="btn-brutal"
+        className="btn-brutal btn-danger-brutal"
         style={{ marginBottom: '2rem' }}
       >
-        <ArrowLeft size={18} /> BACK TO HOME
+        <ArrowLeft size={18} /> EXIT TO HOME
       </button>
 
       <h1 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '2rem' }}>PROJECTS</h1>
@@ -210,9 +221,7 @@ const ProjectDetailView = () => {
 
   return (
     <MotionDiv
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
+      {...BRUTAL_TRANSITIONS.pageEnter}
       style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}
     >
       <div className="brutal-header-card">
@@ -229,9 +238,9 @@ const ProjectDetailView = () => {
         <div className="brutal-action-bar">
           <button
             onClick={() => navigate('/projects')}
-            className="btn-brutal"
+            className="btn-brutal btn-danger-brutal"
           >
-            <ArrowLeft size={18} /> BACK TO PROJECTS
+            <ArrowLeft size={18} /> DISMISS
           </button>
 
           <div className="tag-cloud" style={{ margin: 0 }}>
@@ -352,9 +361,7 @@ const GridView = () => {
 
   return (
     <MotionDiv
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, y: -20 }}
+      {...BRUTAL_TRANSITIONS.pageEnter}
     >
       <header style={{ textAlign: 'center', marginBottom: '3rem', marginTop: '2rem' }}>
         <div className="logo-container glitch-hover" style={{ cursor: 'default' }}>
@@ -545,14 +552,12 @@ const ArchiveView = () => {
 
   return (
     <MotionDiv
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
+      {...BRUTAL_TRANSITIONS.pageEnter}
       style={{ padding: '2rem 0' }}
     >
       <button
         onClick={() => navigate('/')}
-        className="btn-brutal"
+        className="btn-brutal btn-danger-brutal"
         style={{ marginBottom: '3rem' }}
       >
         <ArrowLeft size={18} /> BACK TO HOME
@@ -637,9 +642,7 @@ const PostView = () => {
 
   return (
     <MotionDiv
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
+      {...BRUTAL_TRANSITIONS.pageEnter}
       style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem 1rem' }}
     >
       <div className="brutal-header-card">
@@ -653,9 +656,9 @@ const PostView = () => {
         <div className="brutal-action-bar">
           <button
             onClick={() => navigate('/')}
-            className="btn-brutal primary"
+            className="btn-brutal btn-danger-brutal primary"
           >
-            <ArrowLeft size={18} /> BACK TO HOME
+            <ArrowLeft size={18} /> DISMISS
           </button>
 
           <div className="tag-cloud" style={{ margin: 0 }}>
