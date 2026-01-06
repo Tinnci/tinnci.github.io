@@ -490,9 +490,7 @@ body {
   width: 100vw;
   position: relative;
   left: 50%;
-  right: 50%;
-  margin-left: -50vw;
-  margin-right: -50vw;
+  transform: translateX(-50%);
   background: var(--accent-3);
   border-top: 4px solid var(--border);
   border-bottom: 4px solid var(--border);
