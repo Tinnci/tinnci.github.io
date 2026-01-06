@@ -262,8 +262,8 @@ const ProjectDetailView = () => {
   );
 };
 
-const WindMarquee = () => {
-  const words = [
+const WindMarquee = ({ items }: { items?: string[] }) => {
+  const defaultWords = [
     "⚡️ TIME IS LIFE ITSELF",
     "MANAGE ENERGY, NOT TIME",
     "LESS PERFECTION, MORE CHARACTER",
@@ -278,6 +278,8 @@ const WindMarquee = () => {
     "WALOYO"
   ];
 
+  const words = items || defaultWords;
+
   const content = (
     <div className="marquee-text">
       {words.map((word, i) => (
@@ -290,7 +292,7 @@ const WindMarquee = () => {
   );
 
   return (
-    <div className="marquee-container">
+    <div className="marquee-container" style={items ? { margin: '0', border: 'none', background: 'var(--bg)', borderTop: '4px solid var(--border)' } : undefined}>
       <div className="marquee-content">
         {content}
         {content}
@@ -333,12 +335,16 @@ const GridView = () => {
     }
   };
 
+  // 5. Curtain Reveal (The Rebound)
   const item = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 100, opacity: 0 },
     show: {
       y: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 120 }
+      transition: {
+        ease: [0, 1.3, 1, 1], // The "Hard Rebound" curve
+        duration: 0.5
+      }
     }
   };
 
@@ -351,7 +357,7 @@ const GridView = () => {
       exit={{ opacity: 0, y: -20 }}
     >
       <header style={{ textAlign: 'center', marginBottom: '3rem', marginTop: '2rem' }}>
-        <div className="logo-container">
+        <div className="logo-container glitch-hover" style={{ cursor: 'default' }}>
           <MotionH1 className="logo-shimmer" style={{ fontSize: 'clamp(2.5rem, 8vw, 4.2rem)', lineHeight: 1 }}>
             <span className="logo-condensed">TINNCI</span>
             <span className="logo-dot">.</span>
@@ -623,7 +629,7 @@ const PostView = () => {
   if (!post) {
     return (
       <div style={{ textAlign: 'center', padding: '4rem' }}>
-        <h1>Post not found</h1>
+        <h1 className="shake-hover">Post not found</h1>
         <button onClick={() => navigate('/')}>Back to Home</button>
       </div>
     );
@@ -684,8 +690,8 @@ const App = () => {
           </Routes>
         </AnimatePresence>
 
-        <footer style={{ marginTop: '5rem', textAlign: 'center', paddingBottom: '3rem', fontWeight: 800, textTransform: 'uppercase', opacity: 0.6 }}>
-          TINNCI.IO © 2026 — BUILT WITH BUN ⚡
+        <footer style={{ marginTop: '5rem', paddingBottom: '3rem' }}>
+          <WindMarquee items={["© 2026 TINNCI.IO", "BUILT WITH BUN ⚡", "NO COOKIES", "JUST RAW CODE"]} />
         </footer>
       </div>
     </>
