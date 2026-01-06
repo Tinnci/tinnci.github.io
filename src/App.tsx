@@ -154,10 +154,10 @@ const ProjectsView = () => {
     >
       <button
         onClick={() => navigate('/')}
-        className="pill"
-        style={{ marginBottom: '2rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+        className="btn-brutal"
+        style={{ marginBottom: '2rem' }}
       >
-        <ArrowLeft size={18} /> BACK HOME
+        <ArrowLeft size={18} /> BACK TO HOME
       </button>
 
       <h1 style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: '2rem' }}>PROJECTS</h1>
@@ -229,8 +229,7 @@ const ProjectDetailView = () => {
         <div className="brutal-action-bar">
           <button
             onClick={() => navigate('/projects')}
-            className="pill"
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}
+            className="btn-brutal"
           >
             <ArrowLeft size={18} /> BACK TO PROJECTS
           </button>
@@ -548,8 +547,7 @@ const PostView = () => {
         <div className="brutal-action-bar">
           <button
             onClick={() => navigate('/')}
-            className="pill"
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}
+            className="btn-brutal primary"
           >
             <ArrowLeft size={18} /> BACK TO HOME
           </button>
