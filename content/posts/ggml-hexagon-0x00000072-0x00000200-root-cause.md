@@ -5,6 +5,8 @@ slug: ggml-hexagon-0x00000072-0x00000200-root-cause
 featured: true
 color: var(--accent-3)
 category: Engineering
+series: DiffusionGemma on Snapdragon X Elite NPU
+seriesOrder: 3
 tags:
   - Hexagon NPU
   - FastRPC

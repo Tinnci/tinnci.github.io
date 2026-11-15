@@ -5,6 +5,8 @@ slug: diffusiongemma-npu-enablement-geniex
 featured: true
 color: var(--accent-1)
 category: AI Systems
+series: DiffusionGemma on Snapdragon X Elite NPU
+seriesOrder: 1
 tags:
   - Snapdragon X Elite
   - Hexagon NPU

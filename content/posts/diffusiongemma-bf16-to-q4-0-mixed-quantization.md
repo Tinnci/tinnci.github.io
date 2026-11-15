@@ -5,6 +5,8 @@ slug: diffusiongemma-bf16-to-q4-0-mixed-quantization
 featured: false
 color: var(--accent-2)
 category: AI Systems
+series: DiffusionGemma on Snapdragon X Elite NPU
+seriesOrder: 2
 tags:
   - Quantization
   - Diffusion LLM

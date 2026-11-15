@@ -5,6 +5,8 @@ slug: diffusiongemma-vs-autoregressive-edge-npu
 featured: false
 color: var(--accent-1)
 category: AI Systems
+series: DiffusionGemma on Snapdragon X Elite NPU
+seriesOrder: 4
 tags:
   - Diffusion LLM
   - Autoregressive

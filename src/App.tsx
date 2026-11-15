@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
+import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, ExternalLink, ArrowRight, ArrowLeft, Search, Moon, Sun, X, Network } from 'lucide-react';
 import Fuse from 'fuse.js';
-import { getAllPosts, getPostBySlug, getFeaturedPost, getAllTags, getAllCategories, type Post } from './lib/posts';
+import { getAllPosts, getPostBySlug, getSeriesPosts, getFeaturedPost, getAllTags, getAllCategories, type Post } from './lib/posts';
 import { getAllProjects, getFeaturedProjects } from './lib/projects';
 import { MarkdownContent } from './components/MarkdownContent';
 import { KnowledgeGraph } from './components/KnowledgeGraph';
@@ -681,6 +681,72 @@ const PostView = () => {
         html={post.content}
         style={{ fontSize: '1.15rem', lineHeight: 1.8, maxWidth: '800px', margin: '0 auto' }}
       />
+
+      {(() => {
+        const seriesPosts = post.series ? getSeriesPosts(post.series) : [];
+        const allPosts = getAllPosts();
+        const currentSeriesIdx = seriesPosts.findIndex(p => p.slug === post.slug);
+        const currentAllIdx = allPosts.findIndex(p => p.slug === post.slug);
+        const prevPost = seriesPosts.length > 0
+          ? (currentSeriesIdx > 0 ? seriesPosts[currentSeriesIdx - 1] : undefined)
+          : (currentAllIdx < allPosts.length - 1 ? allPosts[currentAllIdx + 1] : undefined);
+        const nextPost = seriesPosts.length > 0
+          ? (currentSeriesIdx >= 0 && currentSeriesIdx < seriesPosts.length - 1 ? seriesPosts[currentSeriesIdx + 1] : undefined)
+          : (currentAllIdx > 0 ? allPosts[currentAllIdx - 1] : undefined);
+
+        if (seriesPosts.length === 0 && !prevPost && !nextPost) return null;
+
+        return (
+          <nav className="series-nav-card" aria-label="Article series navigation">
+            {seriesPosts.length > 0 && (
+              <>
+                <div className="series-nav-header">
+                  <span style={{ fontWeight: 900, fontSize: '1rem', letterSpacing: '0.02em' }}>
+                    SERIES: {post.series}
+                  </span>
+                  <span className="pill" style={{ background: 'var(--accent-3)', color: '#000', fontSize: '0.75rem' }}>
+                    PART {currentSeriesIdx + 1} / {seriesPosts.length}
+                  </span>
+                </div>
+                <div className="series-nav-list">
+                  {seriesPosts.map((sp, idx) => (
+                    <Link
+                      key={sp.slug}
+                      to={`/post/${sp.slug}`}
+                      className={`series-nav-item ${sp.slug === post.slug ? 'current' : ''}`}
+                    >
+                      <span style={{ fontWeight: 900, minWidth: '2rem' }}>0{idx + 1}.</span>
+                      <span>{sp.title}</span>
+                    </Link>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {(prevPost || nextPost) && (
+              <div className="series-pager">
+                {prevPost ? (
+                  <Link to={`/post/${prevPost.slug}`} className="series-pager-btn">
+                    <span style={{ fontSize: '0.75rem', fontWeight: 900, opacity: 0.75 }}>
+                      ← {seriesPosts.length > 0 ? 'PREVIOUS PART' : 'PREVIOUS POST'}
+                    </span>
+                    <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{prevPost.title}</span>
+                  </Link>
+                ) : <div />}
+
+                {nextPost ? (
+                  <Link to={`/post/${nextPost.slug}`} className="series-pager-btn" style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 900, opacity: 0.75 }}>
+                      {seriesPosts.length > 0 ? 'NEXT PART' : 'NEXT POST'} →
+                    </span>
+                    <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>{nextPost.title}</span>
+                  </Link>
+                ) : <div />}
+              </div>
+            )}
+          </nav>
+        );
+      })()}
     </MotionDiv>
   );
 };

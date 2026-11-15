@@ -9,6 +9,8 @@ export interface PostMeta {
     excerpt: string;
     category: string;
     tags: string[];
+    series?: string;
+    seriesOrder?: number;
 }
 
 export interface Post extends PostMeta {
@@ -43,6 +45,8 @@ export function getAllPosts(): Post[] {
             excerpt: (data.excerpt as string) || '',
             category: (data.category as string) || 'Uncategorized',
             tags: (data.tags as string[]) || [],
+            series: data.series ? String(data.series) : undefined,
+            seriesOrder: typeof data.seriesOrder === 'number' ? data.seriesOrder : undefined,
             content: renderMarkdown(content),
         });
     }
@@ -54,6 +58,12 @@ export function getAllPosts(): Post[] {
 
 export function getPostBySlug(slug: string): Post | undefined {
     return getAllPosts().find(post => post.slug === slug);
+}
+
+export function getSeriesPosts(series: string): Post[] {
+    return getAllPosts()
+        .filter(post => post.series === series)
+        .sort((a, b) => (a.seriesOrder ?? 999) - (b.seriesOrder ?? 999));
 }
 
 export function getFeaturedPost(): Post | undefined {
