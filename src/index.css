@@ -993,6 +993,14 @@ body {
   overflow-x: auto;
   display: flex;
   justify-content: center;
+  --pele-bg: var(--card-bg);
+  --pele-fg: var(--fg);
+  --pele-line: var(--fg);
+  --pele-surface: var(--bg);
+  --pele-surface-alt: var(--card-bg);
+  --pele-border: var(--border);
+  --pele-accent: var(--accent-1);
+  --pele-radius: 0px;
 }
 
 .mermaid-wrapper pre.mermaid {
@@ -1000,4 +1008,7 @@ body {
   border: none;
   margin: 0;
   padding: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
