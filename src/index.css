@@ -983,3 +983,21 @@ body {
   box-shadow: 0 0 0 var(--shadow) !important;
   animation: none !important;
 }
+
+.mermaid-wrapper {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 3px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: 6px 6px 0 var(--border);
+  overflow-x: auto;
+  display: flex;
+  justify-content: center;
+}
+
+.mermaid-wrapper pre.mermaid {
+  background: transparent;
+  border: none;
+  margin: 0;
+  padding: 0;
+}

@@ -1,5 +1,4 @@
-import { marked } from 'marked';
-import * as yaml from 'js-yaml';
+import { parseFrontmatter, renderMarkdown } from './markdown';
 
 export interface Project {
     title: string;
@@ -10,18 +9,6 @@ export interface Project {
     featured: boolean;
     content: string;
     slug: string;
-}
-
-function parseFrontmatter(raw: string): { data: Record<string, unknown>; content: string } {
-    const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
-    if (!match) return { data: {}, content: raw };
-
-    try {
-        const data = yaml.load(match[1]) as Record<string, unknown>;
-        return { data, content: match[2] };
-    } catch {
-        return { data: {}, content: raw };
-    }
 }
 
 const projectModules = import.meta.glob('/content/projects/*.md', {
@@ -50,7 +37,7 @@ export function getAllProjects(): Project[] {
             status: (data.status as string) || 'unknown',
             featured: (data.featured as boolean) || false,
             slug: path.split('/').pop()?.replace('.md', '') || '',
-            content: marked(content) as string,
+            content: renderMarkdown(content),
         });
     }
 

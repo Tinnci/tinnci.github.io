@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Github, Mail, ExternalLink, ArrowRight, ArrowLeft, Search, Moon, Sun, X } from 'lucide-react';
+import { Github, Mail, ExternalLink, ArrowRight, ArrowLeft, Search, Moon, Sun, X, Network } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { getAllPosts, getPostBySlug, getFeaturedPost, getAllTags, getAllCategories, type Post } from './lib/posts';
 import { getAllProjects, getFeaturedProjects } from './lib/projects';
+import { MarkdownContent } from './components/MarkdownContent';
+import { KnowledgeGraph } from './components/KnowledgeGraph';
 
 // Fix for framer-motion v12+ type issues
 // Fix for framer-motion v12+ type issues
@@ -262,10 +264,9 @@ const ProjectDetailView = () => {
         </div>
       </div>
 
-      <article
-        className="prose"
+      <MarkdownContent
+        html={project.content}
         style={{ fontSize: '1.15rem', lineHeight: 1.8, maxWidth: '800px', margin: '0 auto' }}
-        dangerouslySetInnerHTML={{ __html: project.content }}
       />
     </MotionDiv>
   );
@@ -525,14 +526,21 @@ const GridView = () => {
         </MotionDiv>
       </MotionDiv>
 
-      {/* View All Archives Call-to-Action */}
-      <div style={{ marginTop: '4rem', textAlign: 'center' }}>
+      {/* View All Archives & Knowledge Graph Call-to-Action */}
+      <div style={{ marginTop: '4rem', display: 'flex', flexWrap: 'wrap', gap: '1.25rem', justifyContent: 'center' }}>
         <button
           onClick={() => navigate('/archive')}
           className="btn-brutal primary"
-          style={{ width: '100%', maxWidth: '1200px', display: 'flex', justifyContent: 'center' }}
+          style={{ flex: '1 1 320px', maxWidth: '720px', display: 'flex', justifyContent: 'center' }}
         >
           EXPLORE COMPLETE ARCHIVES <ArrowRight size={24} style={{ marginLeft: '1rem' }} />
+        </button>
+        <button
+          onClick={() => navigate('/graph')}
+          className="btn-brutal"
+          style={{ flex: '0 1 280px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', background: 'var(--accent-2)', color: '#000' }}
+        >
+          <Network size={22} /> KNOWLEDGE GRAPH
         </button>
       </div>
     </MotionDiv>
@@ -669,10 +677,9 @@ const PostView = () => {
         </div>
       </div>
 
-      <article
-        className="prose"
+      <MarkdownContent
+        html={post.content}
         style={{ fontSize: '1.15rem', lineHeight: 1.8, maxWidth: '800px', margin: '0 auto' }}
-        dangerouslySetInnerHTML={{ __html: post.content }}
       />
     </MotionDiv>
   );
@@ -690,6 +697,7 @@ const App = () => {
             <Route path="/projects" element={<ProjectsView />} />
             <Route path="/project/:slug" element={<ProjectDetailView />} />
             <Route path="/archive" element={<ArchiveView />} />
+            <Route path="/graph" element={<KnowledgeGraph />} />
           </Routes>
         </AnimatePresence>
 

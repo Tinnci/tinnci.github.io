@@ -1,5 +1,4 @@
-import { marked } from 'marked';
-import * as yaml from 'js-yaml';
+import { parseFrontmatter, renderMarkdown } from './markdown';
 
 export interface PostMeta {
     title: string;
@@ -14,21 +13,6 @@ export interface PostMeta {
 
 export interface Post extends PostMeta {
     content: string;
-}
-
-// Simple frontmatter parser (browser compatible)
-function parseFrontmatter(raw: string): { data: Record<string, unknown>; content: string } {
-    const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
-    if (!match) {
-        return { data: {}, content: raw };
-    }
-
-    try {
-        const data = yaml.load(match[1]) as Record<string, unknown>;
-        return { data, content: match[2] };
-    } catch {
-        return { data: {}, content: raw };
-    }
 }
 
 // Import all markdown files from content/posts
@@ -59,7 +43,7 @@ export function getAllPosts(): Post[] {
             excerpt: (data.excerpt as string) || '',
             category: (data.category as string) || 'Uncategorized',
             tags: (data.tags as string[]) || [],
-            content: marked(content) as string,
+            content: renderMarkdown(content),
         });
     }
 
