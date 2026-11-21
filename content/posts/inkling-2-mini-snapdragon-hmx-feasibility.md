@@ -23,6 +23,21 @@ Thinking Machines Lab 在 2026 年 11 月 20 日发布 **Inkling 2 Mini**：一�
 
 ---
 
+### 系列导航
+
+这是四篇连载，记录把一个刚发布的新架构模型搬到 Snapdragon X Elite 上的全过程。每篇都可以单独读，但结论是递进的：
+
+| 篇 | 内容 | 一句话结论 |
+| :--- | :--- | :--- |
+| **一（本篇）** | 高通优化缺位、GenieX 算子盘点、HMX 特化路线 | 没有任何现成 NPU 产物，必须自己转 |
+| [二：dense 与 MoE 的分工边界](/post/snapdragon-x-elite-dense-vs-moe-boundary) | 四条计算路径的实测对照 | 8B dense 归 CPU，26B MoE 归 NPU |
+| [三：两道门与一个封闭的 DSP](/post/npu-signed-skel-lock-in) | 签名与协议为什么绕不过去 | 自定义 host 配不上签名 skel，NPU 这条路封死 |
+| [四：CPU、Vulkan 与 OpenCL 实测](/post/inkling-2-mini-cpu-gpu-vulkan-opencl) | 退而求其次的真实性能 | 最好的 GPU 方案在 prefill 上落后 CPU 十倍 |
+
+如果只读一篇，建议直接看[第三篇](/post/npu-signed-skel-lock-in)——签名锁定这件事不只影响 Inkling，任何新架构模型都会撞上同一堵墙。
+
+---
+
 ## 1. 模型画像
 
 | 项目 | 数值 |
