@@ -1,0 +1,185 @@
+---
+title: 把 Inkling 2 Mini 搬上 Snapdragon X Elite NPU（三）：两道门与一个封闭的 DSP
+date: 2026-11-21
+slug: npu-signed-skel-lock-in
+featured: false
+color: var(--accent-3)
+category: Engineering
+series: Inkling 2 Mini on Snapdragon X Elite NPU
+seriesOrder: 3
+tags:
+  - Hexagon NPU
+  - FastRPC
+  - 代码签名
+  - Windows ARM64
+  - 生态
+excerpt: 新架构模型跑不上 NPU，表面是"没适配"，实际卡在两道门上：DSP 模块的签名校验，以及 host 与 skel 的 RPC 协议版本。这篇拆开这两道门，聊聊它是否合理。
+---
+
+前两篇讲的是"能不能跑"：算子盘点、量化路线、实测的分工边界。到真正要把一个 11 月 20 日才发布的新架构模型塞进 NPU 时，撞上的不是算力也不是算子，而是两个和"计算"无关的东西：**签名**和**协议版本**。
+
+这篇文章把这两道门拆开看，并回答一个更根本的问题——**这样设计合理吗。**
+
+---
+
+## 1. 两个报错，两次碰壁
+
+同一台机器、同一个模型、同一个 DSP，换不同的 host 二进制，拿到两个完全不同的错误：
+
+```text
+# 用我们自己编的 skel（未签名）
+ggml-hex: HTP0 failed to open session :
+uri file:///libggml-htp-v73.so?htp_iface_skel_handle_invoke&_modver=1.0&_dom=cdsp&_session=0
+error 0x80000406
+
+# 用 GenieX 随包的签名 skel，但 host 是上游版本
+ggml-hex: HTP0 synchronize failed : dsp-error NO-SUPPORT
+ggml-hex: HTP0 dspcall : dsp-rsp NO-SUPPORT
+```
+
+第一条连 session 都没开起来，第二条 session 开了、第一个 dspcall 被拒。**这不是同一类失败。**
+
+---
+
+## 2. 门一：签名
+
+### 签的是什么
+
+DSP 侧的可执行模块是一个 **ELF 共享库**（`libggml-htp-v73.so`），旁边跟一个目录文件 `libggml-htp.cat`。
+
+Windows 的信任体系不认识 ELF，所以签名不落在 `.so` 本身上，而是落在**目录文件**里：目录记录"这个文件的哈希是多少"，然后目录整体被签名。加载时驱动重新算 `.so` 的哈希，跟目录里的比对。
+
+查一下这个目录的签名主体：
+
+```text
+status  : Valid
+signer  : CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation
+issuer  : CN=Microsoft Windows Third Party Component CA 2014
+notAfter: 2027-05-12
+```
+
+注意签名者是**微软**，不是 Qualcomm。流程是：Qualcomm 把 DSP 库提交到微软硬件开发中心做 attestation 签名，拿到目录，再随驱动/应用分发。
+
+而直接对 `.so` 调用 `Get-AuthenticodeSignature` 会返回 `UnknownError`——"指定的信任提供程序不认识或不支持使用者的指定格式"，正好印证签名信息不在 ELF 里。
+
+### 谁在把关
+
+`0x80000406` 这个错误发生在 **FastRPC open session 阶段**，也就是模块被送进 DSP 之前的加载环节。结合上面的签名结构，把关的是 Qualcomm 的 CDSP 驱动：
+
+```mermaid
+flowchart LR
+    H["host 进程<br/>ggml-hexagon.dll"] -->|FastRPC| D["Qualcomm CDSP 驱动"]
+    D --> V{"目录签名校验<br/>.cat vs .so"}
+    V -->|失败| E1["0x80000406<br/>session 打不开"]
+    V -->|通过| P{"host/skel<br/>RPC 协议版本"}
+    P -->|不匹配| E2["NO-SUPPORT<br/>dspcall 被拒"]
+    P -->|匹配| DSP["CDSP<br/>HTP v73"]
+```
+
+一个关键结论：**这不是"能不能改个开关"的问题。** 我们自编的 skel 和被拒绝的 skel 是同一份源码编出来的，唯一差别就是没签名，而报错发生在 session 打开阶段而非算子执行阶段。
+
+顺带说一句：内核驱动有 test signing 这个口子，DSP 模块没有。我们实测也没有走通——它走的是驱动自己的目录核验，不是 Windows 的驱动签名策略，而 CRD 这种设备上这条路本来是关着的。
+
+---
+
+## 3. 门二：协议
+
+签名问题解决后（换成 GenieX 随包的签名 skel），session 能开，但第一个 dspcall 就返回 `NO-SUPPORT`。
+
+原因很简单：**`ggml-hexagon.dll`（host 侧）和 `libggml-htp-v73.so`（DSP 侧）是一对必须同源编译的组件。** host 负责建图、切分算子、发 RPC；skel 负责在 DSP 上真正执行。两边的调用约定、算子编号、参数结构必须一致。
+
+我们拿的是上游 master（含 `inkling2_loop` 支持）的 host，配的是 GenieX v0.11.0 那个 fork 编译出来的 skel，中间隔了五天左右的提交差异——协议对不上，第一个调用就挂了。
+
+### 两道门的对照
+
+| 组合 | 结果 | 卡在哪 |
+| :--- | :--- | :--- |
+| 自编 skel（未签名）+ 同源自编 host | `0x80000406` | 签名：session 都没开起来 |
+| 签名 skel + 上游 host | `NO-SUPPORT` | 协议：session 开了，dspcall 被拒 |
+| 签名 skel + 同源 host（GenieX 自带） | 正常 14 tok/s | 两门都过 |
+
+第三行是正解，也解释了为什么官方版本能跑、我们改一行就废。
+
+---
+
+## 4. 合理吗
+
+这是我写这篇的真正原因。分两面说。
+
+### 安全那一面：合理，甚至必要
+
+DSP 和 GPU 的内存模型完全不是一回事。
+
+FastRPC 的核心是**共享物理内存 buffer**：host 分配一块内存，把句柄交给 DSP，DSP 直接读写。这意味着跑在 DSP 上的代码，能力远超一个普通用户态进程——
+
+- 可以直接读写 host 指定的物理内存，绕过 host 侧的地址空间隔离
+- 在设计上属于"可信执行环境的一部分"，能看到其它进程看不到的东西
+- 一旦失控，可以在 HVCI 之外开一个持久化后门
+
+对比 GPU：允许任意 shader，是因为 GPU 不直接 DMA 到任意物理内存，中间有 IOMMU 兜底，shader 的权限模型比 DSP 严格得多。所以在客户端设备上把 DSP 的加载权限完全放开，等于把 Secured-core 的安全基线拆了。
+
+**从安全角度看，签名是必须的，签在微软那边也比签在厂商自己那边更容易审计。**
+
+### 生态那一面：代价很大，而且有些代价是不必要的
+
+问题出在它的**粒度**和**耦合方式**上。
+
+**第一，签名粒度是"整个二进制"，不是"算子"也不是"模型"。** GPU 上你能自己写 OpenCL kernel、自己编 CUDA，出了新模型当天就能跑；NPU 上不行——只要厂商没发新 skel，新架构模型一天都跑不了。我们这次就是活例子：模型 11 月 20 日发布，上游三天内就合入了支持，但我们要等 Qualcomm 发一版新的签名 skel。
+
+**第二，签名把"协议兼容"和"发版节奏"绑死了。** 这两件事本来应该解耦：签名保证的是"这段代码可信"，协议保证的是"A 能和 B 说话"。现在一签就把时间钉住了——skel 是 11 月 15 日的，host 是 11 月 20 日的，哪怕两边都正确、都安全，就是不能对话。
+
+**第三，错误信息把路指向了错误的方向。** 撞门一的人看到 `0x80000406` 会去查权限、查路径、查驱动版本；撞门二的人看到 `NO-SUPPORT` 会去查算子支持表。两者都不是真正的原因，而真正的答案（"你的 host 比 skel 新五天"）没有任何地方写出来。
+
+### 与其它平台的对比
+
+| 平台 | 开放层级 | 新模型上线速度 |
+| :--- | :--- | :--- |
+| NVIDIA GPU | 二进制级（自己写 kernel） | 当天 |
+| Apple ANE | 模型级（CoreML 编译器转格式） | 随 OS/编译器版本 |
+| Intel / AMD NPU | 驱动 + 标准编译器栈 | 较快 |
+| **Snapdragon Hexagon NPU** | **二进制级封闭** | **随厂商发版** |
+
+Qualcomm 这套是"安全守住了，开放度给得最少"。有意思的是苹果：ANE 同样不开放 kernel，但它开放的是**模型格式**——只要模型能被 CoreML 表达，不需要苹果为你单独发一版驱动。这个折中比二进制级封闭好得多。
+
+---
+
+## 5. 有没有别的路
+
+实话实说，在 Windows 客户端设备上基本没有：
+
+| 路径 | 可行性 |
+| :--- | :--- |
+| 找 Qualcomm 要 dev 签名 / OEM 白名单 | 需要商务关系，个人开发者基本无门 |
+| 开 test signing | 对 DSP 模块无效（走驱动自己的目录核验） |
+| 用 QNN 的 context binary | 同样受限于 QNN 版本，但模型侧转换自由度更大——不用等 skel 支持新算子，只要 QNN 算子集能表达这张图 |
+| Linux / Android | FastRPC 在开发板上有 unsigned PD 模式，生产设备另说 |
+
+所以对做边缘推理的人来说，结论很现实：**在 Windows 上，NPU 不是通用算力，是一个只接受厂商签名产物的封闭加速器。**
+
+---
+
+## 6. 怎么判断自己撞了哪道门
+
+给后来者一张速查表：
+
+| 现象 | 大概是哪道门 | 怎么验证 |
+| :--- | :--- | :--- |
+| `error 0x80000406` / open session 失败 | 签名 | 用官方随包的 `.so` + `.cat` 替换试试 |
+| session 能开，但 `NO-SUPPORT` / `dsp-error` | 协议 | 检查 host 的 `version` 与 skel 是否同一提交 |
+| 加载成功，算子在 CPU 上跑 | 算子不支持 | 看 OPTRACE 的落点 |
+| 分配失败 / 显存超限 | 内存或图太大 | 降 `-c`、降 `-ngl` |
+
+---
+
+## 7. 写在最后
+
+这次移植最后没跑通，但结论比"跑通"更有价值：
+
+**NPU 的封闭性不是工程问题，是平台设计问题。** 它决定了：新模型架构的支持速度不取决于开源社区，而取决于厂商的发版节奏；决定了你不能像调 GPU 那样调 NPU；也决定了"NPU 上跑最新模型"这件事在 Windows 上短期不会有解。
+
+如果这件事对你有产品意义，我建议做两件事，而不是继续修移植：
+
+1. 把这个问题提给 Qualcomm / GenieX：**signed skel 应该和上游 llama.cpp 版本解耦**。它不只影响 Inkling，任何新架构模型都会撞同一堵墙。
+2. 认真评估 QNN 的 context binary 路线。它同样受版本限制，但模型侧的自由度更大，是当前更现实的备选。
+
+至于 Inkling 2 Mini 本身，CPU 路径是通的——9.14 GB 的 Q2 量化，prompt 4.5 tok/s、生成 2.5 tok/s。等 skel 更新那天，我们那七个上游提交的移植方案还留着，可以直接拿来对照。
