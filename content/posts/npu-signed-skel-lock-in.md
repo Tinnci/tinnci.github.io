@@ -150,15 +150,34 @@ Qualcomm 这套是"安全守住了，开放度给得最少"。有意思的是苹
 | 路径 | 可行性 |
 | :--- | :--- |
 | 找 Qualcomm 要 dev 签名 / OEM 白名单 | 需要商务关系，个人开发者基本无门 |
-| 开 test signing | 对 DSP 模块无效（走驱动自己的目录核验） |
+| **自签 skel**（WDK Inf2Cat + 自签证书） | 有人跑通过；代价是要自己把证书装进系统信任库，需要管理员权限 |
+| 开 test signing | 只解决内核驱动，不解决 DSP 模块的目录核验 |
 | 用 QNN 的 context binary | 同样受限于 QNN 版本，但模型侧转换自由度更大——不用等 skel 支持新算子，只要 QNN 算子集能表达这张图 |
 | Linux / Android | FastRPC 在开发板上有 unsigned PD 模式，生产设备另说 |
 
-所以对做边缘推理的人来说，结论很现实：**在 Windows 上，NPU 不是通用算力，是一个只接受厂商签名产物的封闭加速器。**
+所以对做边缘推理的人来说，结论要修正成：**Windows 上的 NPU 默认不是通用算力，但给自签留了一道门缝**——你需要自己管证书信任链，而不是完全没得选。下一节就是别人把这道缝推开的过程。
 
 ---
 
-## 6. 怎么判断自己撞了哪道门
+## 6. 其他人做到了什么
+
+整理这个问题时翻了 GitHub 上的同类报告，有几条比本文的发现更深入，其中一条直接修正了我的判断。
+
+**自签 skel 是可行的。** [GenieX PR #1671](https://github.com/qualcomm/GenieX/pull/1671) 的测试计划里写着：用 WDK 的 `Inf2Cat.exe` 配合 CMake 的 `GGML_HEXAGON_HTP_CERT` 生成自签证书的 skel，在 Snapdragon X2 Elite 上跑通了 Qwen3-4B，**解码 33.2 tok/s**。也就是说 `.cat` 不一定要微软 WHQL 签，自签也能让驱动放行——前提是证书进了系统信任库。
+
+**签名校验的粒度是"每个可加载段"。** [qualcomm-iris-vaapi#15](https://github.com/phxinyang/qualcomm-iris-vaapi/pull/15) 在 Linux / SM8550 上做了对照实验：ELF 文件偏移 `0x1000` 处有一个 `0x19e8` 字节的 Qualcomm 哈希签名块（QDSR Sub-CA 1，SHA-256 摘要，SW_ID/HW_ID/OEM_ID）；在 RX 段里翻转一个字节就返回 `0x80000406`，在段间空隙翻转则不影响加载。
+
+**这个错误跨平台。** [GenieX#1507](https://github.com/qualcomm/GenieX/issues/1507) 在 Android（SM8650，Galaxy S24 Ultra）上复现了同一个 `0x80000406`。
+
+**我们遇到的 26B 问题也是已知 issue。** [GenieX#1690](https://github.com/qualcomm/GenieX/issues/1690) 和 [#1691](https://github.com/qualcomm/GenieX/issues/1691) 记录了 24B dense 模型的 `host buffer exceeds max_vmem`、`hybrid` 永不完成、崩溃后必须重启才能重开 HTP session——和第二节里 gemma-26B 的症状一致。
+
+**还有一层：HTP 队列本身也会出错。** [llama.cpp#26123](https://github.com/ggml-org/llama.cpp/issues/26123) 报告 `dspqueue_read failed: 0x2e`，4B 以上在 8 Gen 2 上可复现，1B 正常。
+
+这几条合起来，把"签名不可绕过"改写成：**官方分发用微软 WHQL 签名，但开发场景可以自签，代价是自己处理证书信任链**。这个区别很关键——前者意味着必须等厂商发版，后者意味着"自己的 host 配自己的 skel"是可能的。
+
+---
+
+## 7. 怎么判断自己撞了哪道门
 
 给后来者一张速查表：
 
@@ -171,7 +190,7 @@ Qualcomm 这套是"安全守住了，开放度给得最少"。有意思的是苹
 
 ---
 
-## 7. 写在最后
+## 8. 写在最后
 
 这次移植最后没跑通，但结论比"跑通"更有价值：
 

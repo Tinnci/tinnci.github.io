@@ -116,6 +116,8 @@ fork 下 hybrid 不但不卡，还比纯 NPU 略快（16.3 vs 12.8）。原因�
 
 这条差异很重要：**同一台机器、同一个模型，仅换运行时就能把"hybrid 不可用"变成"hybrid 最快"**，所以任何性能结论都必须标注运行时 commit。
 
+顺带一提，这几个症状不是本机独有。[GenieX#1690](https://github.com/qualcomm/GenieX/issues/1690) 与 [#1691](https://github.com/qualcomm/GenieX/issues/1691) 在 Snapdragon X2 Elite 上记录了几乎一样的东西：`host buffer exceeds max_vmem`、`hybrid` 永不完成、崩溃后必须重启才能重新打开 HTP session。所以本篇的 26B 结论（9 GB 卡死、hybrid 不可用）可以和上游 issue 对照着看，不是环境问题。
+
 ### 8B GGUF 的输出是退化的
 
 8B 这一行的数据有个必须交代的问题：**输出是退化的**。
