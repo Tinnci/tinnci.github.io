@@ -216,7 +216,73 @@ Qualcomm 这套是"安全守住了，开放度给得最少"。有意思的是苹
 
 ---
 
-## 8. 写在最后
+## 8. 长期变量：编译器在开放，信任根没有
+
+写完前面几节，现实生活中又有两件事值得记下来——它们不改变今天的结论，但决定了三年后这个问题还在不在。
+
+### hexagon-mlir：第一份开源的 Hexagon 编译器
+
+[`qualcomm/hexagon-mlir`](https://github.com/qualcomm/hexagon-mlir)（BSD-3-Clause，2025 年 12 月创建）是一个基于 MLIR 的编译栈，能把 **Triton kernel** 和 **PyTorch 模型**编译到 Hexagon NPU：
+
+| 项目 | 内容 |
+| :--- | :--- |
+| 支持架构 | v73 / v75 / v79 / v81（v81 的 HexKL 暂不可用） |
+| 系统要求 | **Ubuntu 22.04 + root** |
+| 覆盖单元 | HVX 向量、**HMX 矩阵**、TCM、DMA |
+| 定位 | README 原话："complements our commercial toolchains by exploring an open-source MLIR-based compilation stack" |
+
+它踩到了我们前面反复提到的那个东西——HMX。也就是说，**这是第一条"自己写算子就能上 Hexagon"的公开路径**，前提是你在 Linux 上。
+
+但它同时暴露了边界的形状：这是一个"探索路线"，不是生产方案；Windows 完全不在支持列表里。
+
+### Modular 收购：请来了 LLVM 的作者
+
+| 时间 | 事件 |
+| :--- | :--- |
+| 2026-06-24 | Qualcomm 宣布收购 Modular |
+| 2026-07-29 | 完成交割 |
+| — | Chris Lattner 出任 EVP of Advanced AI Software and Platforms |
+
+官方公告的措辞是 "a **heterogeneous ecosystem open to all hardware makers**"。Modular 的 MAX 本来就是多厂商运行时（2025 年就和 AMD 合作过），而 Lattner 是 LLVM、Swift、MLIR 的缔造者。
+
+两条线合起来的逻辑很清楚：
+
+```
+hexagon-mlir  →  开源编译器（MLIR + Triton） → 新算子/新架构可以自己编译
+Modular / MAX →  可移植运行时（多厂商）      → 编译结果能跑在多种硬件上
+```
+
+如果合并，终局是：你写一个 Triton kernel，编译后直接跑在 Hexagon NPU 上，**不需要等厂商为你的模型发一版运行时**。这正是本文一路最缺的东西。
+
+### 三道现实约束
+
+**一、编译器只支持 Linux。** 想在 Windows 上用，需要 WSL + FastRPC 直通，而 Windows 的 CDSP 驱动是否允许 WSL 内的 FastRPC 加载未签名 skel，是另一道门。
+
+**二、编译器解决不了签名。** 签名验的是"这段代码是不是 Qualcomm 认可的"，不是"这段代码怎么编出来的"。就算 hexagon-mlir 明天支持 Windows，它产出的 skel 依然要过 `0x80000406`。
+
+**三、MAX 还没有 Qualcomm backend。** 要接 NPU 就得走 QNN，而 QNN 恰恰是封闭的那一层。
+
+### 三个值得盯的信号
+
+比读新闻有用的观察点：
+
+1. `hexagon-mlir` 是否出现 Windows / WSL 的构建说明
+2. MAX 的 backend 列表里是否出现 `qualcomm` 或 `hexagon`
+3. GenieX 的 `to-sign` 流程是否对开发者开放（哪怕是 dev 证书）
+
+### 时间尺度
+
+| 时间 | 可能发生 | 对本文结论的影响 |
+| :--- | :--- | :--- |
+| 3-6 月 | hexagon-mlir 继续在 Linux 迭代，Windows 无支持 | 无变化 |
+| 6-18 月 | MAX 增加 Qualcomm backend（经 QNN） | 新模型支持加快，签名墙仍在 |
+| 18 月+ | 若推动开放信任根或 QNN 开源 | 才是真正的解锁 |
+
+**一句话：Qualcomm 请来了 LLVM 的作者、开源了 MLIR 编译器、买下了以"不锁定硬件"为使命的公司——这说明软件确实是他们的短板。但信任根属于安全架构，不是软件工程，编译器再好也绕不过去。**
+
+---
+
+## 9. 写在最后
 
 这次移植最后没跑通，但结论比"跑通"更有价值：
 
