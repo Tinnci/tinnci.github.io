@@ -282,11 +282,71 @@ Modular / MAX →  可移植运行时（多厂商）      → 编译结果能跑
 
 ---
 
-## 9. 写在最后
+## 9. 反例：同一个 NPU，在 Linux 上是能用的
 
-这次移植最后没跑通，但结论比"跑通"更有价值：
+写完上一节，我去翻了 Linux 侧的报告——结果直接动摇了前面"NPU 是封闭加速器"这个结论。
 
-**NPU 的封闭性不是工程问题，是平台设计问题。** 它决定了：新模型架构的支持速度不取决于开源社区，而取决于厂商的发版节奏；决定了你不能像调 GPU 那样调 NPU；也决定了"NPU 上跑最新模型"这件事在 Windows 上短期不会有解。
+### 关键差异：Linux 允许 unsigned PD
+
+[qualcomm/fastrpc#188](https://github.com/qualcomm/fastrpc/issues/188) 里，Dell Latitude 7455（X1E-80-100）的调试日志写得明明白白：
+
+```text
+Created user PD on domain 3, enabled attr=> RPC timeout:0, Dbg Mode:N, CRC:N,
+Unsigned:Y, Signed:N, Adapt QOS:N ...
+```
+
+**`Unsigned:Y`。** 在 Linux 上，DSP 允许创建未签名的进程域——这正是 Windows 拒绝我们的那一层。同一个硬件、同一块 CDSP，换了操作系统，门就开了。
+
+### 已经有人跑起来了
+
+[fastrpc#377](https://github.com/qualcomm/fastrpc/issues/377) 是一份很完整的追踪记录，跨了三台机器：
+
+| 报告者 | 机型 | 结果 |
+| :--- | :--- | :--- |
+| hastyheat-com | Lenovo Yoga Slim 7x（X1E80100） | QAIRT/QNN 跑 Llama-3.2-1B：**prefill 194.6 tok/s，decode 11.7 tok/s** |
+| DerekParks | ASUS Zenbook A16（X2 Elite） | 约 20 行 `libcdsprpc` 补丁后，ggml-hexagon 端到端跑通，直到 **Qwen3.8-27B Q4** |
+| UnsignedChad | ThinkPad T14s Gen6（X1E80100） | 修好固件版本后，**NPU 上跑起 LLM** |
+| mkazuhiro | Galaxy Book4 Edge | 同样复现并修复 |
+
+### 两个坑，都不是签名
+
+**坑一：固件与 shell 版本不匹配。** `linux-firmware` 里的 `qccdsp8380.mbn` 是 `CDSP.HT.2.9-00447-HAMOA-2`，而 fastrpc shell 是 `CDSP.HT.2.9.c1-HAMOA-1`——分支不同，`INIT_CREATE` 直接超时，报 `0x8000054f`。解决办法是用厂商 Windows 驱动包里**同版本**的 mbn 与 shell 配对。
+
+**坑二：dspqueue 的 Queue Monitor 模式。** DerekParks 用 gdb 看到：host 把请求写进 REQ ring，DSP 的读指针停在 0，从未取走。Qualcomm 的 contributor 确认这是 **Windows MCDM 调度路径的遗留特性，Linux 不支持**，需要固件里关掉（最新固件已移除）。
+
+### 两张表放在一起看
+
+| 环节 | Windows（本文实测） | Linux（社区报告） |
+| :--- | :--- | :--- |
+| 设备节点 | 正常 | `/dev/fastrpc-cdsp` 正常 |
+| **unsigned PD** | ❌ 拒绝，`0x80000406` | ✅ 允许，`Unsigned:Y` |
+| session 打开 | 失败 | 成功 |
+| 算子执行 | 无法到达 | 可达（需处理 dspqueue） |
+| 端到端 LLM | 不可用 | ✅ 多例成功 |
+
+所以本文的结论要加一个限定：**"NPU 是封闭加速器"这句话只适用于 Windows。** Linux 上它是一台能用的加速器，只是文档、固件配套和工具链还不成熟。
+
+### 对 Inkling 的意义
+
+这条路的意义很直接：如果要在 NPU 上跑 Inkling 2 Mini，Linux 是目前唯一被验证可行的平台。而且需要的组件我们都已经碰过——
+
+1. 一台 Linux 的 X Elite 机器（上面四款机型都有成功报告）
+2. 厂商驱动包里的固件 + shell **同版本配对**
+3. 最新固件（已移除 Queue Monitor），或 `libcdsprpc` 补丁
+4. 上游 llama.cpp（含 `inkling2_loop`）编译 `ggml-hexagon`——就是本文在 Windows 上编过的那套代码
+5. 想自己写算子，还有 Linux-only 的 hexagon-mlir
+
+**Windows 上那道签名墙，绕过去的办法不是破解它，而是换一个不需要它的平台。**
+
+---
+
+## 10. 写在最后
+
+这次移植在 Windows 上没跑通，但结论比"跑通"更有价值：
+
+**NPU 的封闭性不是工程问题，是平台设计问题。** 它决定了：新模型架构的支持速度不取决于开源社区，而取决于厂商的发版节奏；决定了你不能像调 GPU 那样调 NPU。
+
+但要补一句限定：**这套判断只适用于 Windows。** Linux 上 unsigned PD 是允许的，已经有人把 LLM 跑起来了（第 9 节）。所以更准确的说法是——**Windows 是封闭平台，Linux 是可用但不成熟的平台**，两者不是一回事。
 
 如果这件事对你有产品意义，我建议做两件事，而不是继续修移植：
 
