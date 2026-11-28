@@ -31,15 +31,15 @@ MT8183 内部的两颗 APU 核心并不是某种固定功能的纯硬连线 ASIC
 
 在开源主线环境下，整个 ISA 必须明确拆成两层来看：
 
-| ISA 层 | 包含特性 | 开源工具链能否发射？ | 备注与实测验证 |
+| ISA 层 | 包含特性 | 开源工具链能否发射？ | 备注与真机实测验证 |
 |---|---|---|---|
-| **Xtensa LX7 标量 + 真机验证选项** | `call0 ABI`、`mull` (`32×32→32`)、`nsau`、`mul16s`/`mul16u`、`min`/`max`、**零开销循环 `LCOUNT` (`SR 2`)** | **可以** | `apu0.elf` 已生成 `mull` 与 `nsau`；`LCOUNT` 真机探测未异常，可在手写汇编里启用零开销循环；`umul64_32x32()` 用 4 条 `mul16u` 拼精准 64-bit 乘积 |
-| **Xtensa Windowed / MAC16 / 软浮点之外** | `entry`/`retw` 窗口寄存器、**`MAC16` (`ACCLO`, `SR 16`)**、`quos`/`quou` | **禁止 / 硬件不支持** | 真机探测证实 `ACCLO (mac16)` 触发异常（**UNSUPPORTED**）；`Makefile` 用 `-mabi=call0` 禁止 windowed 扩展 |
+| **Xtensa LX7 标量 + 真机解锁指令** | `call0 ABI`、`mull` (`32×32→32`)、**`mulsh`/`muluh` (`32×32→高32位`)**、**`quou`/`quos` 硬件除法**、`nsau`、`mul16s`/`mul16u`、`min`/`max`、**`sext`/`clamps`** | **可以** (`as` 原生或 `.byte` 内联 / 纯汇编) | 真机实测全数精确通过：`mulsh(-1e9,1e9)=0xf21f494c`、`muluh(2^31,2^31)=0x40000000`、`quou(100000,7)=0x37cd`、`clamps(±200,7)=0x7f/0xffffff80`、`sext(0xff,7)=0xffffffff`；`ER 0x110000` (`IDMA_REG_SETTINGS`) 回读 `0x000000cc` |
+| **硬件未配置 / 编译禁用的扩展** | `entry`/`retw` 窗口寄存器、**`MAC16` (`ACCLO`, `SR 16`)**、**零开销循环 (`LCOUNT`)**、**标量 `FPU`** | **禁止 / 硬件不支持** | 真机探测证实 `ACCLO (mac16)`、`loop (.byte 0x76,...)`、`FPU add.s` 均触发异常（**UNSUPPORTED**）；`Makefile` 用 `-mabi=call0` 禁用 windowed 扩展 |
 | **Cadence Vision P6 3 个硬件协处理器 (`CPENABLE = 0x7`)** | `CP0` / `CP1` / `CP2` 硬件单元、512-bit 向量寄存器与 5-way FLIX VLIW、`256 INT8 MAC/cycle` | **不能** | 真机向 `CPENABLE` (`SR 224`) 写 `0xff` 稳态回读 **`0x00000007`**，证明硅片内实打实存在 3 个 TIE 协处理器，但编码与 `xt-clang` 均闭源 |
 
 ### 真机硅片硬件身份寄存器实测 (`trace0`)
 
-为了不靠“规格书推断”，我们在 `firmware/hw_probe.c` 中用 `apu_probe_exec()` 对两颗激活核心 (`19180000.apu` & `19280000.apu`) 直接读取 Xtensa 特殊寄存器，真机实测两核回显**完全一致**：
+为了不靠“规格书推断”，我们在 `firmware/hw_probe.c` 中用 `apu_probe_exec()` 对两颗激活核心 (`19180000.apu` & `19280000.apu`) 直接读取 Xtensa 特殊寄存器并测试指令异常行为，真机实测两核回显**完全一致**：
 
 ```text
 ID: PRID = 0x00000000
@@ -49,12 +49,19 @@ ID: CPENABLE init = 0x00000000
 ID: CPENABLE mask = 0x00000007
 OPT: LCOUNT (loop) = 0x00000000
 OPT: ACCLO (mac16) = UNSUPPORTED
+OPT: mulsh(-1e9*1e9) = 0xf21f494c
+OPT: muluh(2^31*2^31) = 0x40000000
+OPT: quou(100000/7) = 0x000037cd
+OPT: clamps(200,7) = 0x0000007f
+OPT: clamps(-200,7) = 0xffffff80
+OPT: sext(0xff,7) = 0xffffffff
+ER IDMA(0x110000) = 0x000000cc
 ```
 
 这组数字给出了三条硬证据：
 1. **双核硬件完全对称且指纹锁定**：两颗核烧录了同一套 Cadence XPG 构建签名 **`CONFIGID0 = 0xc0f3dbfe` / `CONFIGID1 = 0x21069682`**（注：硅片寄存器只存数字签名，不存 ASCII 字符串；`MVPU6_0226` 名称源自 BayLibre 开源 MT8183 `libAPU` 栈的 `lsp/MVPU6_0226` 目标配置目录，二者精确映射关系以联发科 NDA `core-isa.h` 为准）；
-2. **三个 TIE 协处理器硬件确凿存在**：上电默认关闭（`init = 0x0`），试探写入 `0xff` 后黏滞位稳固停在 **`0x00000007`**（`CP0`/`CP1`/`CP2`），直接证明该核并非普通 LX7 单片机核，而是完整的带协处理器阵列 DSP；
-3. **官方全速用法路径**：在闭源生态（`xt-clang` + BayLibre `libAPU` `-DLIBAPU_DEVICE_TYPE=MT8183`）下，正确打开姿态是：先设 **`CPENABLE = 0x7`** 开启协处理器，再用 **`libidma`** 异步 2D 双缓冲在 DRAM 与双体 TCM 之间搬运分块，并由 **`xt-clang`** 搭配 **`foss-xtensa/tflmlib_vision`** 或 Cadence **`XI Library` / `NNLib`** 生成 5-way FLIX 512-bit 向量捆绑。而开源栈在不触碰闭源 TIE 的前提下，通过吃满 **`L1 I-Cache` + `256 KiB` TCM + `LCOUNT` 零开销循环 + 标量乘法** 仍足以跑通 24/7 家居推理。
+2. **三个 TIE 协处理器硬件确凿存在，同时标量算力底座远比 `sample_controller` 预设更完整**：`CPENABLE` 黏滞掩码 **`0x00000007`** 证实了 `CP0/1/2`；虽然物理上裁掉了 `MAC16`、`FPU` 与 zero-overhead `loop`，但实打实保留了 **`mulsh`/`muluh`（单条 32×32→高32位）、`quou` 硬件除法、`sext`/`clamps`** 与 **Xtensa iDMA 外部寄存器块 (`ER 0x110000 = 0x000000cc`)**——详见[第（六）篇：指令集深挖与性能跃迁实录](/posts/mt8183-vp6-isa-unlock-performance-turnover)；
+3. **官方 vs. 开源加速路径**：在闭源生态（`xt-clang` + BayLibre `libAPU`）下全速路径是 `CPENABLE = 0x7` + `libidma` + Cadence `XI Library` / `NNLib`；而在开源栈中，把这批隐藏标量硬件指令全部解锁后，再配合 **`L1 I-Cache` + `115–128 KiB` TCM 分块 + 纯 Xtensa 零溢出汇编微内核 (`tcm_dot.S`)**，标量有效图级算力从早先 `10–96 MOPS` 跃升到 **`~130–179 MOPS`**，足以让语音唤醒和空间感知推理在原有延迟预算内直接提速 **27%–4.8×**。
 
 ---
 
@@ -72,22 +79,20 @@ OPT: ACCLO (mac16) = UNSUPPORTED
 
 2. **开源标量 Xtensa LX7 天花板（无 TIE SIMD，双核 @ `525 MHz`）**
    - 仅使用 Xtensa LX7 标量 `mul16s`/`mull` 流水线时，理想单周期至多完成 1 次标量 MAC（$1 \times 2 \times 525\text{ MHz} = \mathbf{1.05\text{ GOPS/核}}$，双核合计 **`2.10 GOPS`**）。
-   - 但卷积/GEMM 内核不仅要做乘法，还要拆字节装填、累加器循环控制、`tcm_dot_2x2` 展开以及逐通道 64-bit Q31 定点重缩放（`umul64_32x32` + rounding + `min/max` clamp），实际在多周期标量流水下，真实图级有效吞吐大约落在 **~`10–96 MOPS`** 量级。
+   - 早先纯 C 编译版（`-O2` + 4 条 `mul16u` 软拼 64-bit Q31 重缩放）的有效图级吞吐落在 ~`10–96 MOPS`；通过解锁 **`mulsh`/`quou`/`sext`** + **`115 KiB` 动态 TCM GEMM 分块** + **零溢出纯汇编 `tcm_dot.S` 内核**后，图级真实有效算力已提升到 **`125–179 MOPS`**（`GEMM_I8 64×64×64` 实测 `5.85 cycles/MAC` 含拆包与重量化）。
 
 ### `mt8183-apu` 真机硅片实测汇总 (`525 MHz`)
 
-| 测试负载 | 无缓存/早先基线 | 启用 I-Cache + TCM + `EXEC_GRAPH` | 与标准参考精度差 |
+| 测试负载 | 早先 I-Cache + TCM 基线 | **最新 (ISA 解锁 + `tcm_dot.S` 汇编)** | 相对加速与精度 |
 |---|---|---|---|
-| `GEMM_I8` `64×64×64` | `~196M cyc` / `~376 ms` | **`~8.3M cyc` / `17–26 ms`** | **Bit-exact** |
-| `CONV2D_I8` `16×16×8 → 16×16×16` (`3×3`) | `~295M cyc` / `~567 ms` | **`~11.2M cyc` / `23–30 ms`** | **Bit-exact** |
-| `GEMM_F32` `32×32×32` | `~475M cyc` / `~912 ms` | **`~25.6M cyc` / `55–56 ms`** | `max_err = 0` |
-| `mtk-apu-test` 双核并发 | `1,936.44 ms` *(无 `mull` `3,660 ms`)* | **`96–112 ms`** | 全部通过 |
-| `bench_nn.py` 8× 3 层 CNN+MLP (`406k MACs`) | — | **`639.79 ms` (1C) → `333.29 ms` (2C, `9.75 MOPS`, `1.92×`)** | INT8 bit-exact, `softmax max_err = 1.49e-09` |
-| **Core 0 `microWakeWord` (`alexa.tflite`, `30 ms` 块)** | *(Host CPU `openWakeWord`: `34.46%`)* | **`~3.1M cyc` / `9.1–11.6 ms` (`~0.33× RT`)**, `wakeword` 容器 **`0.00%` CPU** | `max_abs_qdiff = 0`, Alexa `0.9998–1.0000` vs neg `0.0003–0.0013` |
-| **Core 1 `person_detect.tflite` (`MobileNetV1 0.25× 96×96`)** | `~395M cyc` / `~755 ms` *(DRAM 栈图)* | **`82.1M cyc` / `156.3 ms`** (`TCM_PINGPONG` + TCM 栈, **`4.81×`**) | Bit-exact: `person.bmp = 0.9408`, `no_person.bmp = 0.2711` |
-| **Core 1 `VP6SpatialDepthNetRGB` (`96×96×3 → 12×12×5`)** | — | **`45.8M cyc` / `87.2 ms` (`10.78 FPS`)** | `max_abs_qdiff = 0`, `F1 = 0.9825`, `zone_acc = 94.5%` |
+| `GEMM_I8` `64×64×64` | `~8.3M cyc` / `17–26 ms` | **`1.535M cyc` / `11.77 ms`** (`179 MOPS`) | **`5.41×` 周期压缩**, `max_err = 0` |
+| `CONV2D_I8` `16×16×8 → 16×16×16` (`3×3`) | `~11.2M cyc` / `23–30 ms` | *已并入整网/汇编微内核基准* | **Bit-exact** |
+| `bench_nn.py` 8× 3 层 CNN+MLP (`406k MACs`) | `639.79 ms` (1C) → `333.29 ms` (2C) | **`494.21 ms` (1C) → `284.55 ms` (2C, `11.42 MOPS`)** | `3.54M cyc/帧`, `softmax max_err = 1.49e-09` |
+| **Core 0 `microWakeWord` (`alexa.tflite`, `30 ms` 块)** | `~3.1M cyc` / `9.1–11.6 ms` | **`1.66M cyc` / `8.33 ms`** (`wakeword` CPU `0.00%`) | **`-46.5%` VP6 周期**, `max_abs_qdiff = 0` |
+| **Core 1 `person_detect.tflite` (`MobileNetV1 0.25× 96×96`)** | `82.1M cyc` / `156.3–160.1 ms` | **`59.77M cyc` / `118.85 ms`** (`person.bmp`) | **`-27.2%` (`1.37×`)**, Bit-exact `0.9408` / `0.2711` |
+| **Core 1 `VP6SpatialDepthNetRGB` (`96×96×3 → 12×12×5`)** | `45.8M cyc` / `87.2 ms` (`10.78 FPS`) | **`31.22M cyc` / `64.35 ms` (`15.54 FPS`)** | **`-31.8%` 周期 (`+44.2% FPS`)**, Bit-exact |
 
-**核心结论**：如果跑 1080p YOLO 或多路实时视频分析，缺少 512-bit TIE SIMD 会很吃力；但如果目标锁定在 **16 kHz 语音唤醒/VAD（仅需 `< 12 ms`/块）、`96×96` 家居在席/空间感知（`87–156 ms`/帧）、电机声纹或传感器时序融合**，开源方案在把主频和 TCM 吃满的前提下已经做到 **3 倍实时余量 + 主 CPU 近零占用**。
+**核心结论**：如果跑 1080p YOLO 或多路实时视频分析，缺少 512-bit TIE SIMD 依然力所不及；但在解锁全部标量硬件指令并手写零溢出 TCM 汇编内核后，**16 kHz 语音唤醒已缩到 `8.33 ms`/块（近 4 倍实时余量）、`96×96` RGB 多任务在席+深度推理直达 `15.54 FPS`（`64.35 ms`/帧）、`MobileNetV1 0.25×` 压进 `119 ms` 内**——彻底支撑 24/7 家居推理与主 CPU 近零占用。
 
 ---
 
@@ -149,9 +154,10 @@ flowchart LR
 
 ```makefile
 CFLAGS_BASE := -mabi=call0 -mlongcalls -mtext-section-literals \
-               -O2 -ffreestanding -nostdlib -fno-builtin -Wall -Wextra -Werror \
+               -O3 -ffreestanding -nostdlib -fno-builtin -Wall -Wextra -Werror \
                -DUSE_HW_MUL32
 LDFLAGS     := -nostdlib -Wl,--build-id=none
+SRCS        := start.S tcm_dot.S rsc_table.c trace.c hw_probe.c mpu.c virtio_rpmsg.c ops.c main.c
 ```
 
 - `-mabi=call0`：彻底绕开 windowed 寄存器窗口溢出处理复杂度；
@@ -226,4 +232,4 @@ det.close()
 | **本地语音唤醒 / VAD (`wyoming`)** | `daemons/vp6_vad_proxy.py` + `vp6_microwakeword.py` | 作为 Wyoming 服务器监听 `127.0.0.1:10401`，将原本运行在 CPU 的 `wyoming-openwakeword` (`:10400`) 作为降级热备，直接向 `wyoming-satellite` 推送唤醒 `detection` 事件 |
 | **本地平板交互与自愈保障** | `systemd/` + `ha_health.py` | `mtk-apu.service` 开机加载双核 ELF 固件；用户服务启用 `CPUAffinity=4-7` 固定大核；通过 `/run/user/10000/vp6-sensors.json` + `org.gnome.ScreenSaver` D-Bus 与 `ha-shell` 联动锁屏与唤醒；`ha_health.py` 统一校验服务、端口、容器、EC 充电阈值及 `iommu_faults = 0` |
 
-至此，从内核设备树、裸机 Xtensa 固件、内存与算力剖析、开源工具链到全链路优化与 Home Assistant 生产落地，这台 2020 年发布的 MT8183 平板完成了它在开源主线 Linux 上的彻底翻新。
+至此，从内核设备树、裸机 Xtensa 固件、内存与算力剖析、开源工具链到全链路优化与 Home Assistant 生产落地，这台 2020 年发布的 MT8183 平板完成了它在开源主线 Linux 上的彻底翻新。如果你想看第 2/3 阶段基于真机硬件探测解锁 `mulsh`/`quou`/`sext` 与手写 `tcm_dot.S` 汇编微内核的完整性能跃迁实录（以及算力变宽后该投给“更低延迟”还是“更大模型”的定量决策），可继续阅读[第（六）篇：MVPU6_0226 隐藏指令解锁、零溢出汇编微内核与全栈性能跃迁](/posts/mt8183-vp6-isa-unlock-performance-turnover)。
