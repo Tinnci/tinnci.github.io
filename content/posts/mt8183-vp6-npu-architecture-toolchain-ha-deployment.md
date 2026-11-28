@@ -33,11 +33,28 @@ MT8183 内部的两颗 APU 核心并不是某种固定功能的纯硬连线 ASIC
 
 | ISA 层 | 包含特性 | 开源工具链能否发射？ | 备注与实测验证 |
 |---|---|---|---|
-| **Xtensa LX7 基础标量 + 验证硬件整数扩展** | `call0 ABI`、`mull` (`32×32→32`)、`mul16s`/`mul16u`、`min`/`max`、双 32-bit 标量流水 | **可以** | 通过 `hw_probe` 与 `ops.c` 真机实测可用；`umul64_32x32()` 用 4 条 `mul16u` 拼出精准 64-bit 乘积支撑 TFLite Q31 重缩放 |
-| **Xtensa Windowed / Div / Norm 扩展** | `entry`/`retw` 窗口寄存器、硬件除法 `quos`/`quou`、`rems`/`remu`、`nsa`/`nsau`、`muluh`/`mulsh` | **禁止 / 未依赖** | `firmware/Makefile` 用 `-mabi=call0` 与 `objdump` `verify` 检查，保证不生成不被目标配置支持的扩展或 windowed 指令 |
-| **Cadence Vision P6 (`MVPU6_0226`) TIE 512-bit 5-way VLIW** | 512-bit 向量寄存器文件（64 × 8-bit 通道）、单周期并行 5-way VLIW 发射、双 512-bit 本地 TCM 加载/存储、硬件向量乘加最高 `256 INT8 MAC/cycle` | **不能** | 需要 Cadence 商业授权的 `MVPU6_0226` TIE 配置文件与 `xt-clang` / Tensilica Xplorer SDK 才能生成对应操作码 |
+| **Xtensa LX7 标量 + 真机验证选项** | `call0 ABI`、`mull` (`32×32→32`)、`nsau`、`mul16s`/`mul16u`、`min`/`max`、**零开销循环 `LCOUNT` (`SR 2`)** | **可以** | `apu0.elf` 已生成 `mull` 与 `nsau`；`LCOUNT` 真机探测未异常，可在手写汇编里启用零开销循环；`umul64_32x32()` 用 4 条 `mul16u` 拼精准 64-bit 乘积 |
+| **Xtensa Windowed / MAC16 / 软浮点之外** | `entry`/`retw` 窗口寄存器、**`MAC16` (`ACCLO`, `SR 16`)**、`quos`/`quou` | **禁止 / 硬件不支持** | 真机探测证实 `ACCLO (mac16)` 触发异常（**UNSUPPORTED**）；`Makefile` 用 `-mabi=call0` 禁止 windowed 扩展 |
+| **Cadence Vision P6 3 个硬件协处理器 (`CPENABLE = 0x7`)** | `CP0` / `CP1` / `CP2` 硬件单元、512-bit 向量寄存器与 5-way FLIX VLIW、`256 INT8 MAC/cycle` | **不能** | 真机向 `CPENABLE` (`SR 224`) 写 `0xff` 稳态回读 **`0x00000007`**，证明硅片内实打实存在 3 个 TIE 协处理器，但编码与 `xt-clang` 均闭源 |
 
-一句话概括开源软件栈与这颗芯片的关系：**芯片硬件上确实装着 `~0.5 TOPS` 的 512-bit 向量引擎，但开源世界里能合法生成稳定机器码的，是它的 `525 MHz` Xtensa LX7 标量与 16/32-bit DSP 整数管线 + `L1 I-Cache` + `256 KiB` 单周期 TCM。**
+### 真机硅片硬件身份寄存器实测 (`trace0`)
+
+为了不靠“规格书推断”，我们在 `firmware/hw_probe.c` 中用 `apu_probe_exec()` 对两颗激活核心 (`19180000.apu` & `19280000.apu`) 直接读取 Xtensa 特殊寄存器，真机实测两核回显**完全一致**：
+
+```text
+ID: PRID = 0x00000000
+ID: CONFIGID0 = 0xc0f3dbfe
+ID: CONFIGID1 = 0x21069682
+ID: CPENABLE init = 0x00000000
+ID: CPENABLE mask = 0x00000007
+OPT: LCOUNT (loop) = 0x00000000
+OPT: ACCLO (mac16) = UNSUPPORTED
+```
+
+这组数字给出了三条硬证据：
+1. **双核硬件完全对称且指纹锁定**：两颗核烧录了同一套 Cadence XPG 构建签名 **`CONFIGID0 = 0xc0f3dbfe` / `CONFIGID1 = 0x21069682`**（注：硅片寄存器只存数字签名，不存 ASCII 字符串；`MVPU6_0226` 名称源自 BayLibre 开源 MT8183 `libAPU` 栈的 `lsp/MVPU6_0226` 目标配置目录，二者精确映射关系以联发科 NDA `core-isa.h` 为准）；
+2. **三个 TIE 协处理器硬件确凿存在**：上电默认关闭（`init = 0x0`），试探写入 `0xff` 后黏滞位稳固停在 **`0x00000007`**（`CP0`/`CP1`/`CP2`），直接证明该核并非普通 LX7 单片机核，而是完整的带协处理器阵列 DSP；
+3. **官方全速用法路径**：在闭源生态（`xt-clang` + BayLibre `libAPU` `-DLIBAPU_DEVICE_TYPE=MT8183`）下，正确打开姿态是：先设 **`CPENABLE = 0x7`** 开启协处理器，再用 **`libidma`** 异步 2D 双缓冲在 DRAM 与双体 TCM 之间搬运分块，并由 **`xt-clang`** 搭配 **`foss-xtensa/tflmlib_vision`** 或 Cadence **`XI Library` / `NNLib`** 生成 5-way FLIX 512-bit 向量捆绑。而开源栈在不触碰闭源 TIE 的前提下，通过吃满 **`L1 I-Cache` + `256 KiB` TCM + `LCOUNT` 零开销循环 + 标量乘法** 仍足以跑通 24/7 家居推理。
 
 ---
 
