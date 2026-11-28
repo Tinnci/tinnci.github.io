@@ -1,10 +1,12 @@
 ---
-title: MT8183 视觉在席唤醒全链路优化：从 1.72 秒压到 0.70 秒，兼治 Mali-G72 掉帧
+title: 把 Lenovo Chromebook Duet (MT8183) 搬上主线 Linux（四）：视觉在席唤醒全链路优化与 Mali-G72 掉帧治理
 date: 2026-11-28
 slug: mt8183-presence-pipeline-end-to-end-optimization
 featured: false
 color: var(--accent-2)
 category: Engineering
+series: MT8183 Mainline Camera & Vision P6 NPU Bring-Up
+seriesOrder: 4
 tags:
   - MT8183
   - Edge NPU
